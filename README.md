@@ -8,6 +8,11 @@ A Perl client for the Cloud Contact AI API that allows you to easily send SMS an
 - Required CPAN modules (see Installation)
 
 ## Installation
+```bash
+git clone https://github.com/cloudcontactai/ccai-perl.git
+cd ccai-perl
+cpanm --installdeps .
+```
 
 Install required dependencies:
 
