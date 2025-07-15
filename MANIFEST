@@ -1,0 +1,14 @@
+cpanfile
+lib/CCAI.pm
+lib/CCAI/SMS.pm
+lib/CCAI/MMS.pm
+LICENSE
+Makefile.PL
+MANIFEST
+README.md
+examples/sms_example.pl
+examples/mms_example.pl
+examples/comprehensive_example.pl
+t/01-basic.t
+t/02-sms.t
+t/03-mms.t
