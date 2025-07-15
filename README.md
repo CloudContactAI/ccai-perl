@@ -8,21 +8,42 @@ A Perl client for the Cloud Contact AI API that allows you to easily send SMS an
 - Required CPAN modules (see Installation)
 
 ## Installation
+
 ```bash
 git clone https://github.com/cloudcontactai/ccai-perl.git
 cd ccai-perl
 cpanm --installdeps .
+
+# Verify SSL configuration
+perl verify_ssl.pl
+
+# Test with examples
+perl -Ilib examples/sms_example.pl
 ```
 
 Install required dependencies:
 
 ```bash
-# Using cpanm (recommended)
-cpanm LWP::UserAgent JSON HTTP::Request::Common File::Basename MIME::Base64
+# Using cpanm (recommended) - installs all dependencies including SSL support
+cpanm --installdeps .
+
+# Or install individual modules
+cpanm LWP::UserAgent JSON HTTP::Request::Common File::Basename MIME::Base64 Mozilla::CA LWP::Protocol::https IO::Socket::SSL
 
 # Or using cpan
-cpan LWP::UserAgent JSON HTTP::Request::Common File::Basename MIME::Base64
+cpan LWP::UserAgent JSON HTTP::Request::Common File::Basename MIME::Base64 Mozilla::CA LWP::Protocol::https IO::Socket::SSL
 ```
+
+**SSL Configuration**: The client automatically configures SSL certificates. If you encounter SSL issues, run:
+```bash
+perl verify_ssl.pl
+```
+
+# Or install all dependencies from cpanfile
+cpanm --installdeps .
+```
+
+**Note:** The SSL modules (Mozilla::CA, LWP::Protocol::https, IO::Socket::SSL) are required for secure HTTPS communication with the CCAI API.
 
 ## Usage
 
@@ -187,6 +208,21 @@ prove -lv t/01-basic.t
 - Comprehensive error handling
 - Unit tests
 - Modern Perl practices
+- **Automatic SSL certificate configuration**
+
+## SSL Certificate Handling
+
+The CCAI client automatically configures SSL certificates using the Mozilla::CA module. If you encounter SSL certificate errors:
+
+1. **Automatic (Recommended)**: The client handles this automatically when Mozilla::CA is installed
+2. **Manual**: Set the environment variable:
+   ```bash
+   export PERL_LWP_SSL_CA_FILE=$(perl -MMozilla::CA -e 'print Mozilla::CA::SSL_ca_file()')
+   ```
+3. **System CA**: On some systems, you might need:
+   ```bash
+   export PERL_LWP_SSL_CA_FILE=/etc/ssl/certs/ca-certificates.crt
+   ```
 
 ## Error Handling
 

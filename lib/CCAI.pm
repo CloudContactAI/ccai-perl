@@ -9,6 +9,27 @@ use JSON;
 use HTTP::Request::Common qw(GET POST PUT DELETE);
 use Carp qw(croak);
 
+# SSL Configuration - Bulletproof approach
+BEGIN {
+    # Method 1: Set environment variable early
+    unless ($ENV{PERL_LWP_SSL_CA_FILE}) {
+        eval {
+            require Mozilla::CA;
+            $ENV{PERL_LWP_SSL_CA_FILE} = Mozilla::CA::SSL_ca_file();
+        };
+    }
+    
+    # Method 2: Configure IO::Socket::SSL defaults
+    eval {
+        require IO::Socket::SSL;
+        require Mozilla::CA;
+        IO::Socket::SSL::set_defaults(
+            SSL_ca_file => Mozilla::CA::SSL_ca_file(),
+            SSL_verify_mode => IO::Socket::SSL::SSL_VERIFY_PEER(),
+        );
+    };
+}
+
 use CCAI::SMS;
 use CCAI::MMS;
 
@@ -71,14 +92,57 @@ sub new {
     croak "client_id is required" unless $config->{client_id};
     croak "api_key is required" unless $config->{api_key};
     
+    # Configure SSL CA file - Multiple approaches for maximum compatibility
+    my $ca_file;
+    eval {
+        require Mozilla::CA;
+        $ca_file = Mozilla::CA::SSL_ca_file();
+        
+        # Set environment variable (primary method)
+        $ENV{PERL_LWP_SSL_CA_FILE} = $ca_file unless $ENV{PERL_LWP_SSL_CA_FILE};
+        
+        # Also try to configure IO::Socket::SSL directly
+        if (eval { require IO::Socket::SSL; 1 }) {
+            IO::Socket::SSL::set_defaults(
+                SSL_ca_file => $ca_file,
+                SSL_verify_mode => IO::Socket::SSL::SSL_VERIFY_PEER(),
+            );
+        }
+    };
+    
+    # Create UserAgent
+    my $ua = LWP::UserAgent->new(
+        agent   => "CCAI-Perl/$VERSION",
+        timeout => 30
+    );
+    
+    # Try multiple SSL configuration methods
+    if ($ca_file && -f $ca_file) {
+        # Method 1: ssl_opts (if available)
+        eval {
+            $ua->ssl_opts(
+                SSL_ca_file => $ca_file,
+                verify_hostname => 1,
+                SSL_verify_mode => 1
+            );
+        };
+        
+        # Method 2: Direct environment variable setting
+        $ENV{HTTPS_CA_FILE} = $ca_file unless $ENV{HTTPS_CA_FILE};
+        
+        # Method 3: LWP::UserAgent specific SSL configuration
+        eval {
+            require LWP::Protocol::https;
+            # Force reload of https protocol with new settings
+        };
+    }
+    
     my $self = {
+        client_id => $config->{client_id},
         client_id => $config->{client_id},
         api_key   => $config->{api_key},
         base_url  => $config->{base_url} || 'https://core.cloudcontactai.com/api',
-        ua        => LWP::UserAgent->new(
-            agent   => "CCAI-Perl/$VERSION",
-            timeout => 30
-        ),
+        ua        => $ua,
         json      => JSON->new->utf8
     };
     

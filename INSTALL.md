@@ -51,22 +51,41 @@ perl -MCPAN -e 'install Module::Name'
 
 ## SSL Certificate Issues
 
-If you encounter SSL certificate errors, you have several options:
+The CCAI client automatically handles SSL certificate configuration. If you encounter SSL certificate errors, the client will automatically:
 
-### Option 1: Install Mozilla::CA (Recommended)
+1. **Auto-configure**: Uses Mozilla::CA certificate bundle automatically
+2. **Set SSL options**: Configures LWP::UserAgent with proper SSL settings
+3. **Fallback gracefully**: Works even if SSL modules aren't perfectly configured
+
+### Manual SSL Configuration (if needed)
+
+If you still encounter SSL issues:
+
+#### Option 1: Install Mozilla::CA (Recommended)
 ```bash
 cpanm Mozilla::CA
 ```
 
-### Option 2: Set CA file environment variable
+#### Option 2: Set CA file environment variable
 ```bash
-export PERL_LWP_SSL_CA_FILE=/path/to/ca-bundle.crt
+export PERL_LWP_SSL_CA_FILE=$(perl -MMozilla::CA -e 'print Mozilla::CA::SSL_ca_file()')
 ```
 
-### Option 3: Disable SSL verification (NOT recommended for production)
+#### Option 3: System CA bundle (Linux/macOS)
+```bash
+# Linux
+export PERL_LWP_SSL_CA_FILE=/etc/ssl/certs/ca-certificates.crt
+
+# macOS with Homebrew
+export PERL_LWP_SSL_CA_FILE=/usr/local/etc/openssl/cert.pem
+```
+
+#### Option 4: Disable SSL verification (NOT recommended for production)
 ```bash
 export PERL_LWP_SSL_VERIFY_HOSTNAME=0
 ```
+
+**Note**: The CCAI client handles SSL configuration automatically when Mozilla::CA is installed, so manual configuration is rarely needed.
 
 ## Testing
 
