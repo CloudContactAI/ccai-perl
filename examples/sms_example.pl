@@ -21,20 +21,20 @@ sub main {
     
     my @accounts = (
         {
-            first_name => "John",
-            last_name  => "Doe",
+            firstName => "John",
+            lastName  => "Doe",
             phone      => "+15551234567"
         },
         {
-            first_name => "Jane",
-            last_name  => "Smith",
+            firstName => "Jane",
+            lastName  => "Smith",
             phone      => "+15559876543"
         }
     );
 
     my $response = $ccai->sms->send(
         \@accounts,
-        "Hello \${first_name} \${last_name}, this is a test message from Perl!",
+        "Hello \${firstName} \${lastName}, this is a test message from Perl!",
         "Perl SMS Test Campaign"
     );
 
@@ -66,7 +66,7 @@ sub main {
         "Alice",
         "Johnson",
         "+15555551234",
-        "Hi \${first_name}, this is a personalized message just for you!",
+        "Hi \${firstName}, this is a personalized message just for you!",
         "Single SMS Test",
         $options
     );

@@ -1,6 +1,6 @@
 # CCAI Perl Client
 
-A Perl client for the Cloud Contact AI API that allows you to easily send SMS and MMS messages.
+A Perl client for the CloudContactAI API that allows you to easily send SMS and MMS messages.
 
 ## Requirements
 
@@ -40,6 +40,7 @@ perl verify_ssl.pl
 ```
 
 # Or install all dependencies from cpanfile
+```
 cpanm --installdeps .
 ```
 

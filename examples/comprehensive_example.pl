@@ -51,25 +51,25 @@ sub sms_examples {
     
     my @accounts = (
         {
-            first_name => "John",
-            last_name  => "Doe",
+            firstName => "John",
+            lastName  => "Doe",
             phone      => "+15551234567"
         },
         {
-            first_name => "Jane",
-            last_name  => "Smith",
+            firstName => "Jane",
+            lastName  => "Smith",
             phone      => "+15559876543"
         },
         {
-            first_name => "Bob",
-            last_name  => "Johnson",
+            firstName => "Bob",
+            lastName  => "Johnson",
             phone      => "+15555551234"
         }
     );
 
     my $response = $ccai->sms->send(
         \@accounts,
-        "Hello \${first_name} \${last_name}! This is a test message from our Perl client. Your phone number ends in " . 
+        "Hello \${firstName} \${lastName}! This is a test message from our Perl client. Your phone number ends in " . 
         substr($accounts[0]->{phone}, -4) . ".",
         "Perl Multi-Recipient Test"
     );
@@ -94,7 +94,7 @@ sub sms_examples {
         "Alice",
         "Williams",
         "+15555559999",
-        "Hi \${first_name}! This is a personalized message with progress tracking.",
+        "Hi \${firstName}! This is a personalized message with progress tracking.",
         "Perl Single SMS with Progress",
         $options
     );
@@ -106,15 +106,15 @@ sub sms_examples {
     
     my @template_accounts = (
         {
-            first_name => "Michael",
-            last_name  => "Brown",
+            firstNname => "Michael",
+            lastName  => "Brown",
             phone      => "+15551111111"
         }
     );
 
     my $template_response = $ccai->sms->send(
         \@template_accounts,
-        "Dear \${first_name} \${last_name},\n\n" .
+        "Dear \${firstName} \${lastName},\n\n" .
         "Welcome to our service! Your account has been created successfully.\n\n" .
         "Best regards,\nThe Team",
         "Welcome Message Template"
@@ -153,8 +153,8 @@ sub mms_examples {
     
     # Define recipients for MMS
     my @mms_accounts = ({
-        first_name => 'Sarah',
-        last_name  => 'Davis',
+        firstName => 'Sarah',
+        lastName  => 'Davis',
         phone      => '+15552222222'
     });
 
@@ -178,7 +178,7 @@ sub mms_examples {
     print "       '$image_path',\n";
     print "       'image/jpeg',\n";
     print "       \\\@mms_accounts,\n";
-    print "       'Hello \\\${first_name}, check out this image!',\n";
+    print "       'Hello \\\${firstName}, check out this image!',\n";
     print "       'Perl MMS Demo',\n";
     print "       \$mms_options\n";
     print "   );\n";
@@ -188,7 +188,7 @@ sub mms_examples {
     #     $image_path,
     #     'image/jpeg',
     #     \@mms_accounts,
-    #     "Hello \${first_name}, check out this image!",
+    #     "Hello \${firstName}, check out this image!",
     #     "Perl MMS Demo",
     #     $mms_options
     # );

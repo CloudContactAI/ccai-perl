@@ -33,8 +33,8 @@ sub main {
 
     # Define recipients
     my @accounts = ({
-        first_name => 'John',
-        last_name  => 'Doe',
+        firstName => 'John',
+        lastName  => 'Doe',
         phone      => '+15551234567'
     });
 
@@ -52,7 +52,7 @@ sub main {
         print "    '$image_path',\n";
         print "    '$content_type',\n";
         print "    \\@accounts,\n";
-        print "    \"Hello \\\${first_name}, check out this image!\",\n";
+        print "    \"Hello \\\${firstName}, check out this image!\",\n";
         print "    \"MMS Campaign Example\",\n";
         print "    \$options\n";
         print ");\n\n";
@@ -66,7 +66,7 @@ sub main {
         $image_path,
         $content_type,
         \@accounts,
-        "Hello \${first_name}, check out this image!",
+        "Hello \${firstName}, check out this image!",
         "MMS Campaign Example",
         $options
     );
