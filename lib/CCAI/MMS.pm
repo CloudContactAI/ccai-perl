@@ -103,16 +103,59 @@ sub get_signed_url {
     $file_base_path //= $self->{ccai}->get_client_id() . '/campaign';
     $public_file = 1 unless defined $public_file;
     
-    my $endpoint = "/clients/" . $self->{ccai}->get_client_id() . "/campaigns/direct/signed-s3-url";
+    # Use the correct files API endpoint
+    my $url = 'https://files.cloudcontactai.com/upload/url';
     
     my $request_data = {
-        file_name      => $file_name,
-        file_type      => $file_type,
-        file_base_path => $file_base_path,
-        public_file    => $public_file ? JSON::true : JSON::false
+        fileName      => $file_name,
+        fileType      => $file_type,
+        fileBasePath  => $file_base_path,
+        publicFile    => $public_file ? JSON::true : JSON::false
     };
     
-    return $self->{ccai}->request('POST', $endpoint, $request_data);
+    # Create a separate UA for files API to avoid Cloudflare blocks
+    my $files_ua = LWP::UserAgent->new(
+        agent   => "Faraday v2.12.2",
+        timeout => 60
+    );
+    
+    # Make direct request to files API
+    my $request = HTTP::Request::Common::POST($url);
+    $request->content($self->{ccai}->{json}->encode($request_data));
+    $request->header('Authorization' => "Bearer " . $self->{ccai}->get_api_key());
+    $request->header('Content-Type'  => 'application/json');
+    $request->header('Accept'        => '*/*');
+    
+    my $response = $files_ua->request($request);
+    
+    if ($response->is_success) {
+        my $response_data;
+        eval {
+            $response_data = $self->{ccai}->{json}->decode($response->content);
+        };
+        if ($@) {
+            return {
+                success => 0,
+                error   => "Failed to parse JSON response: $@"
+            };
+        }
+        
+        # Override fileKey like Ruby does
+        $response_data->{file_key} = $self->{ccai}->get_client_id() . "/campaign/" . $file_name;
+        
+        return {
+            success => 1,
+            data    => {
+                signed_s3_url => $response_data->{signedS3Url},
+                file_key      => $response_data->{file_key}
+            }
+        };
+    } else {
+        return {
+            success => 0,
+            error   => "API Error: " . $response->status_line . " - " . $response->content
+        };
+    }
 }
 
 =head2 upload_file($signed_url, $file_path, $content_type)
@@ -291,13 +334,13 @@ sub send_mms {
         $options->{on_progress}->('Preparing to send MMS');
     }
     
-    my $endpoint = "/clients/" . $self->{ccai}->get_client_id() . "/campaigns/direct/mms";
+    my $endpoint = "/clients/" . $self->{ccai}->get_client_id() . "/campaigns/direct";
     
     my $campaign_data = {
-        accounts => $accounts,
-        message  => $message,
-        title    => $title,
-        file_key => $file_key
+        pictureFileKey => $file_key,
+        accounts       => $accounts,
+        message        => $message,
+        title          => $title
     };
     
     # Notify progress if callback provided
