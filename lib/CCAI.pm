@@ -32,6 +32,8 @@ BEGIN {
 
 use CCAI::SMS;
 use CCAI::MMS;
+use CCAI::Email;
+use CCAI::Webhook;
 
 our $VERSION = '1.0.0';
 
@@ -58,11 +60,31 @@ CCAI - Perl client for the Cloud Contact AI API
         "Hello \${first_name}!",
         "Test Campaign"
     );
+    
+    # Send Email
+    my $email_response = $ccai->email->send_single(
+        "John",
+        "Doe",
+        "john@example.com",
+        "Welcome to Our Service",
+        "<p>Hello \${first_name},</p><p>Thank you for signing up!</p>",
+        "noreply@yourcompany.com",
+        "support@yourcompany.com",
+        "Your Company",
+        "Welcome Email"
+    );
+    
+    # Register a webhook
+    my $webhook_response = $ccai->webhook->register({
+        url => "https://example.com/webhook",
+        events => ["message.sent", "message.received"],
+        secret => "your-webhook-secret"
+    });
 
 =head1 DESCRIPTION
 
 CCAI is a Perl client library for the Cloud Contact AI API that allows you to 
-easily send SMS and MMS messages.
+easily send SMS and MMS messages, send email campaigns, and manage webhooks.
 
 =head1 METHODS
 
@@ -139,7 +161,6 @@ sub new {
     
     my $self = {
         client_id => $config->{client_id},
-        client_id => $config->{client_id},
         api_key   => $config->{api_key},
         base_url  => $config->{base_url} || 'https://core.cloudcontactai.com/api',
         ua        => $ua,
@@ -148,9 +169,11 @@ sub new {
     
     bless $self, $class;
     
-    # Initialize SMS and MMS services
+    # Initialize services
     $self->{sms} = CCAI::SMS->new($self);
     $self->{mms} = CCAI::MMS->new($self);
+    $self->{email} = CCAI::Email->new($self);
+    $self->{webhook} = CCAI::Webhook->new($self);
     
     return $self;
 }
@@ -179,6 +202,32 @@ Returns the MMS service instance.
 sub mms {
     my $self = shift;
     return $self->{mms};
+}
+
+=head2 email
+
+Returns the Email service instance.
+
+    my $email_response = $ccai->email->send_campaign(...);
+
+=cut
+
+sub email {
+    my $self = shift;
+    return $self->{email};
+}
+
+=head2 webhook
+
+Returns the Webhook service instance.
+
+    my $webhook_response = $ccai->webhook->register(...);
+
+=cut
+
+sub webhook {
+    my $self = shift;
+    return $self->{webhook};
 }
 
 =head2 get_client_id
