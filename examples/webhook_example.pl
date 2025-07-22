@@ -4,32 +4,54 @@ use strict;
 use warnings;
 use 5.016;
 
-use lib '../lib';
+use lib '../lib', 'lib';
 use CCAI;
 use Data::Dumper;
 
 # Create a CCAI client
 my $ccai = CCAI->new({
-    client_id => 'YOUR-CLIENT-ID',  # Replace with your client ID
-    api_key   => 'YOUR-API-KEY'     # Replace with your API key
+    client_id => '2682',
+    api_key   => 'eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJpbmZvQGFsbGNvZGUuY29tIiwiaXNzIjoiY2xvdWRjb250YWN0IiwibmJmIjoxNzE5NDQwMjM2LCJpYXQiOjE3MTk0NDAyMzYsInJvbGUiOiJVU0VSIiwiY2xpZW50SWQiOjI2ODIsImlkIjoyNzY0LCJ0eXBlIjoiQVBJX0tFWSIsImtleV9yYW5kb21faWQiOiI1MGRiOTUzZC1hMjUxLTRmZjMtODI5Yi01NjIyOGRhOGE1YTAifQ.PKVjXYHdjBMum9cTgLzFeY2KIb9b2tjawJ0WXalsb8Bckw1RuxeiYKS1bw5Cc36_Rfmivze0T7r-Zy0PVj2omDLq65io0zkBzIEJRNGDn3gx_AqmBrJ3yGnz9s0WTMr2-F1TFPUByzbj1eSOASIKeI7DGufTA5LDrRclVkz32Oo'
 });
 
-# Example 1: Register a webhook
-my $webhook_id = register_webhook($ccai);
+# Choose which examples to run
+my $run_register = 1;  # Set to 1 to register a new webhook
+my $run_list = 0;      # Set to 1 to list existing webhooks (Note: API endpoint may not be available)
+my $run_update = 0;    # Set to 1 to update a webhook
+my $run_delete = 0;    # Set to 1 to delete a webhook
+my $run_parse = 1;     # Set to 1 to test parsing a webhook event
 
-if ($webhook_id) {
-    # Example 2: List webhooks
-    list_webhooks($ccai);
-    
-    # Example 3: Update a webhook
+# Example 1: Register a webhook (set $run_register = 1 to enable)
+my $webhook_id;
+if ($run_register) {
+    $webhook_id = register_webhook($ccai);
+}
+
+# Example 2: List webhooks (set $run_list = 1 to enable)
+if ($run_list) {
+    my $webhooks = list_webhooks($ccai);
+    # If we need a webhook ID for update/delete and didn't register one,
+    # use the first one from the list
+    if (!$webhook_id && $webhooks && @$webhooks > 0) {
+        $webhook_id = $webhooks->[0]->{id};
+        print "Using webhook ID $webhook_id for operations\n";
+    }
+}
+
+# Example 3: Update a webhook (set $run_update = 1 to enable)
+if ($run_update && $webhook_id) {
     update_webhook($ccai, $webhook_id);
-    
-    # Example 4: Delete a webhook
+}
+
+# Example 4: Delete a webhook (set $run_delete = 1 to enable)
+if ($run_delete && $webhook_id) {
     delete_webhook($ccai, $webhook_id);
 }
 
-# Example 5: Parse a webhook event
-parse_webhook_event($ccai);
+# Example 5: Parse a webhook event (set $run_parse = 1 to enable)
+if ($run_parse) {
+    parse_webhook_event($ccai);
+}
 
 # Example 1: Register a webhook
 sub register_webhook {
@@ -37,10 +59,19 @@ sub register_webhook {
     
     print "Registering a webhook...\n";
     
+    # To get a webhook URL for testing:
+    # 1. Go to https://webhook.site/ and copy your unique URL
+    # 2. Or use ngrok: run 'ngrok http 8080' and copy the https URL
+    
+    # Use ngrok to expose your local webhook server
+    # 1. Start the webhook server: perl simple_webhook_server.pl
+    # 2. In another terminal, run: ngrok http 8080
+    # 3. Copy the https URL provided by ngrok (e.g., https://abc123.ngrok.io)
+    # 4. Replace the URL below with your ngrok URL
     my $config = {
-        url => "https://your-webhook-endpoint.com/webhook",  # Replace with your webhook endpoint
+        url => "https://66d8d4c45b5c.ngrok-free.app",  # Your current ngrok URL
         events => ["message.sent", "message.received"],
-        secret => "your-webhook-secret"  # Replace with your webhook secret
+        secret => "ccai-webhook-secret"  # A secret key to verify webhook authenticity
     };
     
     my $response = $ccai->webhook->register($config);
@@ -81,8 +112,11 @@ sub list_webhooks {
                 print "  - $event\n";
             }
         }
+        
+        return $response->{data}; # Return webhooks for potential use
     } else {
         print "Failed to list webhooks: $response->{error}\n";
+        return undef;
     }
     
     print "\n";
@@ -95,9 +129,9 @@ sub update_webhook {
     print "\nUpdating webhook $webhook_id...\n";
     
     my $config = {
-        url => "https://your-updated-endpoint.com/webhook",  # Replace with your updated webhook endpoint
+        url => "https://66d8d4c45b5c.ngrok-free.app",  # Your current ngrok URL
         events => ["message.sent"],  # Only subscribe to message.sent events
-        secret => "your-updated-secret"  # Replace with your updated webhook secret
+        secret => "ccai-webhook-secret"  # Same secret as registration
     };
     
     my $response = $ccai->webhook->update($webhook_id, $config);
@@ -138,6 +172,8 @@ sub parse_webhook_event {
     my ($ccai) = @_;
     
     print "\nParsing a webhook event...\n";
+    print "This demonstrates how to process webhook events when they arrive at your server\n";
+    print "You would typically use this in a webhook handler script that receives POST requests\n\n";
     
     # Example webhook payload for a message.sent event
     my $json = <<'JSON';
@@ -152,7 +188,7 @@ sub parse_webhook_event {
         "runAt": "2025-07-22T12:01:00Z"
     },
     "from": "+15551234567",
-    "to": "+15559876543",
+    "to": "+14156961732",
     "message": "Hello John, this is a test message."
 }
 JSON
@@ -169,7 +205,7 @@ JSON
         
         # Example of verifying a webhook signature
         my $signature = "abcdef1234567890";  # This would come from the X-CCAI-Signature header
-        my $secret = "your-webhook-secret";
+        my $secret = "ccai-webhook-secret";
         
         my $is_valid = $ccai->webhook->verify_signature($signature, $json, $secret);
         

@@ -11,8 +11,8 @@ use CCAI;
 sub main {
     # Initialize the client
     my $ccai = CCAI->new({
-        client_id => 'YOUR-CLIENT-ID',
-        api_key   => 'YOUR-API-KEY'
+        client_id => '2682',
+        api_key   => 'eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJpbmZvQGFsbGNvZGUuY29tIiwiaXNzIjoiY2xvdWRjb250YWN0IiwibmJmIjoxNzE5NDQwMjM2LCJpYXQiOjE3MTk0NDAyMzYsInJvbGUiOiJVU0VSIiwiY2xpZW50SWQiOjI2ODIsImlkIjoyNzY0LCJ0eXBlIjoiQVBJX0tFWSIsImtleV9yYW5kb21faWQiOiI1MGRiOTUzZC1hMjUxLTRmZjMtODI5Yi01NjIyOGRhOGE1YTAifQ.PKVjXYHdjBMum9cTgLzFeY2KIb9b2tjawJ0WXalsb8Bckw1RuxeiYKS1bw5Cc36_Rfmivze0T7r-Zy0PVj2omDLq65io0zkBzIEJRNGDn3gx_AqmBrJ3yGnz9s0WTMr2-F1TFPUByzbj1eSOASIKeI7DGufTA5LDrRclVkz32Oo'
     });
 
     # Example 1: Send SMS to multiple recipients
@@ -23,12 +23,12 @@ sub main {
         {
             first_name => "John",
             last_name  => "Doe",
-            phone      => "+15551234567"
+            phone      => "+14156961732"
         },
         {
             first_name => "Jane",
             last_name  => "Smith",
-            phone      => "+15559876543"
+            phone      => "+14156961732"
         }
     );
 
@@ -65,7 +65,7 @@ sub main {
     my $single_response = $ccai->sms->send_single(
         "Alice",
         "Johnson",
-        "+15551234567",
+        "+14156961732",
         "Hi \${first_name}, this is a personalized message just for you!",
         "Single SMS Test",
         $options
