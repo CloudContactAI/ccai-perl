@@ -7,6 +7,7 @@ requires 'File::Slurp';
 requires 'Mozilla::CA';
 requires 'LWP::Protocol::https';
 requires 'IO::Socket::SSL';
+requires 'Digest::SHA';
 
 on 'test' => sub {
     requires 'Test::More';
