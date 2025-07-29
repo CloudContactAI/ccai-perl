@@ -53,7 +53,7 @@ sub new {
     
     my $self = {
         ccai => $ccai,
-        base_url => 'https://email-campaigns.cloudcontactai.com/api/v1'
+        base_url => $ccai->get_email_url() . '/api/v1'
     };
     
     bless $self, $class;
@@ -370,6 +370,8 @@ sub _custom_request {
     $request->header('Authorization' => "Bearer " . $self->{ccai}->get_api_key());
     $request->header('Content-Type' => 'application/json');
     $request->header('Accept' => '*/*');
+    $request->header('ClientId' => $self->{ccai}->get_client_id());
+    $request->header('AccountId' => $self->{ccai}->get_client_id());
     
     # Make the request
     my $response = $self->{ccai}->{ua}->request($request);
