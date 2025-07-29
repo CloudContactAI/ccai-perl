@@ -7,10 +7,13 @@ use 5.016;
 use lib '../lib';
 use CCAI;
 
-# Create a CCAI client
+# Create a CCAI client for test environment
 my $ccai = CCAI->new({
-    client_id => '2682',
-    api_key   => 'eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJpbmZvQGFsbGNvZGUuY29tIiwiaXNzIjoiY2xvdWRjb250YWN0IiwibmJmIjoxNzE5NDQwMjM2LCJpYXQiOjE3MTk0NDAyMzYsInJvbGUiOiJVU0VSIiwiY2xpZW50SWQiOjI2ODIsImlkIjoyNzY0LCJ0eXBlIjoiQVBJX0tFWSIsImtleV9yYW5kb21faWQiOiI1MGRiOTUzZC1hMjUxLTRmZjMtODI5Yi01NjIyOGRhOGE1YTAifQ.PKVjXYHdjBMum9cTgLzFeY2KIb9b2tjawJ0WXalsb8Bckw1RuxeiYKS1bw5Cc36_Rfmivze0T7r-Zy0PVj2omDLq65io0zkBzIEJRNGDn3gx_AqmBrJ3yGnz9s0WTMr2-F1TFPUByzbj1eSOASIKeI7DGufTA5LDrRclVkz32Oo'
+    client_id => '1231',
+    api_key   => 'eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJhbmRyZWFzQGFsbGNvZGUuY29tIiwiaXNzIjoiY2xvdWRjb250YWN0IiwibmJmIjoxNzUyMDg5MDk2LCJpYXQiOjE3NTIwODkwOTYsInJvbGUiOiJVU0VSIiwiY2xpZW50SWQiOjEyMzEsImlkIjoxMjIzLCJ0eXBlIjoiQVBJX0tFWSIsImtleV9yYW5kb21faWQiOiIzNTAxZjVmNC0zOWYyLTRjYzctYTk2Yi04ZDkyZjVlMjM5ZGUifQ.XjtDPpyYUJNJjLrpM1pdQ4Sqk90eaagqzPX2v1gwHDP1wOV4fTbB44UGDRXtWyGvN-Fz7o84_Ab-VlAjNCyEmXcDzmzscnwFSbqiZrWLAM_W3Mutd36vArl9QSG_osuYdf9T2wmAduUZu2bcnvKHdBbEaBUalJSSUoHwHsMBX3w',
+    base_url  => 'https://core-test-cloudcontactai.allcode.com/api',
+    email_url => 'https://email-campaigns-test-cloudcontactai.allcode.com',
+    auth_url  => 'https://auth-test-cloudcontactai.allcode.com'
 });
 
 # Example 1: Send a single email
@@ -31,12 +34,12 @@ sub send_single_email {
     my $response = $ccai->email->send_single(
         "John",                                    # First name
         "Doe",                                     # Last name
-        "john@example.com",                        # Email address (replace with a real email for testing)
+        "andreas\@allcode.com",                   # Email address
         "Welcome to Our Service",                  # Subject
         "<p>Hello \${first_name},</p><p>Thank you for signing up for our service!</p><p>Best regards,<br>The Team</p>",  # HTML message content
-        "noreply\@yourcompany.com",                # Sender email (replace with your sender email)
-        "support\@yourcompany.com",                # Reply-to email (replace with your reply-to email)
-        "Your Company",                            # Sender name
+        "noreply\@allcode.com",                   # Sender email
+        "support\@allcode.com",                   # Reply-to email
+        "CCAI Test",                               # Sender name
         "Welcome Email",                           # Campaign title
         {
             on_progress => sub { print "Status: $_[0]\n" }  # Progress callback
@@ -73,19 +76,19 @@ sub send_email_campaign {
 <p>Thank you for being a valued customer!</p>
 <p>Best regards,<br>The Team</p>
 HTML
-        sender_email => "newsletter\@yourcompany.com",  # Replace with your sender email
-        reply_email => "support\@yourcompany.com",      # Replace with your reply-to email
-        sender_name => "Your Company Newsletter",
+        sender_email => "newsletter\@allcode.com",
+        reply_email => "support\@allcode.com",
+        sender_name => "CCAI Newsletter",
         accounts => [
             {
                 first_name => "John",
                 last_name => "Doe",
-                email => "john@example.com"  # Replace with a real email for testing
+                email => "john\@example.com"
             },
             {
                 first_name => "Jane",
                 last_name => "Smith",
-                email => "jane@example.com"  # Replace with a real email for testing
+                email => "jane\@example.com"
             }
         ],
         campaign_type => "EMAIL",
@@ -135,14 +138,14 @@ sub schedule_email_campaign {
 <p>We look forward to seeing you there!</p>
 <p>Best regards,<br>The Events Team</p>
 HTML
-        sender_email => "events\@yourcompany.com",  # Replace with your sender email
-        reply_email => "events\@yourcompany.com",   # Replace with your reply-to email
-        sender_name => "Your Company Events",
+        sender_email => "events\@allcode.com",
+        reply_email => "events\@allcode.com",
+        sender_name => "CCAI Events",
         accounts => [
             {
                 first_name => "John",
                 last_name => "Doe",
-                email => "john@example.com"  # Replace with a real email for testing
+                email => "john\@example.com"
             }
         ],
         campaign_type => "EMAIL",

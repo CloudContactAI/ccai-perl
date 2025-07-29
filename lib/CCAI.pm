@@ -163,6 +163,8 @@ sub new {
         client_id => $config->{client_id},
         api_key   => $config->{api_key},
         base_url  => $config->{base_url} || 'https://core.cloudcontactai.com/api',
+        email_url => $config->{email_url} || 'https://email-campaigns.cloudcontactai.com',
+        auth_url  => $config->{auth_url} || 'https://auth.cloudcontactai.com',
         ua        => $ua,
         json      => JSON->new->utf8
     };
@@ -261,6 +263,28 @@ Returns the base URL.
 sub get_base_url {
     my $self = shift;
     return $self->{base_url};
+}
+
+=head2 get_email_url
+
+Returns the email URL.
+
+=cut
+
+sub get_email_url {
+    my $self = shift;
+    return $self->{email_url};
+}
+
+=head2 get_auth_url
+
+Returns the auth URL.
+
+=cut
+
+sub get_auth_url {
+    my $self = shift;
+    return $self->{auth_url};
 }
 
 =head2 request($method, $endpoint, $data)
