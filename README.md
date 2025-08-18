@@ -18,7 +18,7 @@ cpanm --installdeps .
 perl verify_ssl.pl
 
 # Test with examples
-perl -Ilib examples/sms_example.pl
+perl -Ilib examples/sms_send.pl
 ```
 
 Install required dependencies:

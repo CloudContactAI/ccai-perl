@@ -15,7 +15,7 @@ my $ua = LWP::UserAgent->new;
 my $payload = {
     type => "message.sent",
     from => "+15551234567",
-    to => "+14156961732",
+    to => "+14155551212",
     message => "Test webhook from Perl",
     timestamp => time()
 };

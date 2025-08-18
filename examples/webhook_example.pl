@@ -188,7 +188,7 @@ sub parse_webhook_event {
         "runAt": "2025-07-22T12:01:00Z"
     },
     "from": "+15551234567",
-    "to": "+14156961732",
+    "to": "+14155551212",
     "message": "Hello John, this is a test message."
 }
 JSON

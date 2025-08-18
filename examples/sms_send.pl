@@ -23,13 +23,8 @@ sub main {
         {
             first_name => "John",
             last_name  => "Doe",
-            phone      => "+14156961732"
+            phone      => "+14155551212"
         },
-        {
-            first_name => "Jane",
-            last_name  => "Smith",
-            phone      => "+14156961732"
-        }
     );
 
     my $response = $ccai->sms->send(
@@ -65,7 +60,7 @@ sub main {
     my $single_response = $ccai->sms->send_single(
         "Alice",
         "Johnson",
-        "+14156961732",
+        "+14155551212",
         "Hi \${first_name}, this is a personalized message just for you!",
         "Single SMS Test",
         $options
