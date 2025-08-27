@@ -35,7 +35,7 @@ use CCAI::MMS;
 use CCAI::Email;
 use CCAI::Webhook;
 
-our $VERSION = '1.0.0';
+our $VERSION = '1.3.0';
 
 =head1 NAME
 
@@ -176,6 +176,37 @@ sub new {
     $self->{mms} = CCAI::MMS->new($self);
     $self->{email} = CCAI::Email->new($self);
     $self->{webhook} = CCAI::Webhook->new($self);
+    
+    # Auto-suppress warnings if environment variable is set
+    $self->suppress_lwp_warnings() if $ENV{CCAI_SUPPRESS_WARNINGS};
+    
+    return $self;
+}
+
+=head2 suppress_lwp_warnings()
+
+Suppress LWP Content-Length header warnings that are common but harmless.
+
+    $ccai->suppress_lwp_warnings();
+
+This method sets up a warning handler that filters out the "Content-Length header 
+value was wrong, fixed" warnings from LWP::UserAgent while preserving other warnings.
+
+=cut
+
+sub suppress_lwp_warnings {
+    my ($self) = @_;
+    
+    # Store original warning handler
+    my $original_warn = $SIG{__WARN__} || sub { warn @_ };
+    
+    # Set up filtered warning handler
+    $SIG{__WARN__} = sub {
+        my $warning = shift;
+        # Suppress specific LWP Content-Length warnings
+        return if $warning =~ /Content-Length header value was wrong, fixed/;
+        $original_warn->($warning);
+    };
     
     return $self;
 }

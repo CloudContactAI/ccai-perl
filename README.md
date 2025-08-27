@@ -1,6 +1,12 @@
-# CCAI Perl Client
+# CCAI Perl Client v1.3.0
 
 A Perl client for the [CloudContactAI](https://cloudcontactai.com) API that allows you to easily send SMS and MMS messages, send email campaigns, and manage webhooks.
+
+## What's New in v1.3.0
+
+- **CustomData Support**: Pass custom data with SMS messages that will be included in webhook events
+- Enhanced webhook event handling with custom data correlation
+- Improved business process integration capabilities
 
 ## Requirements
 
@@ -13,6 +19,10 @@ A Perl client for the [CloudContactAI](https://cloudcontactai.com) API that allo
 git clone https://github.com/cloudcontactai/ccai-perl.git
 cd ccai-perl
 cpanm --installdeps .
+
+# Set up your credentials
+cp .env.example .env
+# Edit .env and add your CCAI credentials
 
 # Verify SSL configuration
 perl verify_ssl.pl
@@ -46,12 +56,192 @@ cpanm --installdeps .
 
 **Note:** The SSL modules (Mozilla::CA, LWP::Protocol::https, IO::Socket::SSL) are required for secure HTTPS communication with the CCAI API.
 
+## Configuration
+
+### Environment Variables
+
+The CCAI Perl client supports loading credentials from environment variables using a `.env` file:
+
+1. **Copy the example file:**
+   ```bash
+   cp .env.example .env
+   ```
+
+2. **Edit `.env` with your credentials:**
+   ```bash
+   # CCAI API Credentials
+   CCAI_CLIENT_ID=your-client-id-here
+   CCAI_API_KEY=your-api-key-here
+   
+   # Optional: Suppress LWP Content-Length warnings (set to 1 to enable)
+   CCAI_SUPPRESS_WARNINGS=1
+   ```
+
+3. **Use in your code:**
+   ```perl
+   use CCAI;
+   use CCAI::EnvLoader;
+   
+   # Load environment variables from .env file
+   CCAI::EnvLoader->load();
+   
+   # Get credentials from environment
+   my ($client_id, $api_key) = CCAI::EnvLoader->get_ccai_credentials();
+   
+   # Initialize the client
+   my $ccai = CCAI->new({
+       client_id => $client_id,
+       api_key   => $api_key
+   });
+   ```
+
+### Direct Configuration
+
+You can also configure credentials directly in your code:
+
+```perl
+use CCAI;
+
+my $ccai = CCAI->new({
+    client_id => 'YOUR-CLIENT-ID',
+    api_key   => 'API-KEY-TOKEN'
+});
+```
+
 ## Usage
 
-### SMS
+### SMS with CustomData
 
 ```perl
 use lib '.';
+use CCAI;
+
+# Initialize the client
+my $ccai = CCAI->new({
+    client_id => 'YOUR-CLIENT-ID',
+    api_key   => 'API-KEY-TOKEN'
+});
+
+# Send SMS with customData for webhook correlation
+my @accounts = (
+    {
+        first_name => "John",
+        last_name  => "Doe",
+        phone      => "+15551234567",
+        customData => {
+            order_id => "ORD-12345",
+            customer_type => "premium",
+            purchase_amount => 299.99,
+            notification_preference => "sms"
+        }
+    },
+    {
+        first_name => "Jane",
+        last_name  => "Smith", 
+        phone      => "+15559876543",
+        customData => {
+            appointment_id => "APPT-789",
+            service_type => "consultation",
+            provider => "Dr. Johnson",
+            reminder_type => "24hr"
+        }
+    }
+);
+
+my $response = $ccai->sms->send(
+    \@accounts,
+    "Hello \${first_name} \${last_name}, this is a test message!",
+    "Test Campaign"
+);
+
+if ($response->{success}) {
+    print "SMS sent successfully! Campaign ID: " . $response->{data}->{campaign_id} . "\n";
+    print "CustomData will be included in webhook events for tracking.\n";
+} else {
+    print "Error: " . $response->{error} . "\n";
+}
+
+# Send single SMS with customData
+my $single_response = $ccai->sms->send_single(
+    "Alice",
+    "Johnson",
+    "+15559876544",
+    "Hi \${first_name}, your order is ready!",
+    "Order Ready Notification",
+    undef,  # options
+    {       # customData
+        order_id => "ORD-67890",
+        pickup_location => "Store #123",
+        ready_time => "2025-08-27T14:30:00Z"
+    }
+);
+```
+
+### Webhooks with CustomData
+
+```perl
+use lib '.';
+use CCAI;
+
+# Initialize the client
+my $ccai = CCAI->new({
+    client_id => 'YOUR-CLIENT-ID',
+    api_key   => 'API-KEY-TOKEN'
+});
+
+# Process a webhook event with customData (in your webhook handler)
+sub process_webhook_event {
+    my ($json, $signature, $secret) = @_;
+    
+    # Verify the signature
+    if ($ccai->webhook->verify_signature($signature, $json, $secret)) {
+        # Parse the event
+        my $event = $ccai->webhook->parse_event($json);
+        
+        if ($event && $event->{type} eq "message.sent") {
+            print "Message sent to: $event->{to}\n";
+            
+            # Access customData for business logic
+            if ($event->{customData}) {
+                my $custom = $event->{customData};
+                
+                # Handle order-related messages
+                if ($custom->{order_id}) {
+                    print "Order notification sent: $custom->{order_id}\n";
+                    # Update order status in your system
+                    # update_order_notification_status($custom->{order_id}, 'sent');
+                }
+                
+                # Handle appointment reminders
+                if ($custom->{appointment_id}) {
+                    print "Appointment reminder sent: $custom->{appointment_id}\n";
+                    # Mark reminder as delivered
+                    # mark_reminder_delivered($custom->{appointment_id});
+                }
+                
+                # Customer segmentation
+                if ($custom->{customer_type} eq 'premium') {
+                    print "Premium customer notification delivered\n";
+                    # Special handling for premium customers
+                }
+            }
+        } elsif ($event && $event->{type} eq "message.failed") {
+            print "Message failed to: $event->{to}\n";
+            
+            # Handle failures with context from customData
+            if ($event->{customData} && $event->{customData}->{order_id}) {
+                print "Order notification failed: " . $event->{customData}->{order_id} . "\n";
+                # Implement fallback notification (email, etc.)
+                # fallback_notification($event->{customData}->{order_id});
+            }
+        }
+    } else {
+        print "Invalid signature\n";
+    }
+}
+### Basic SMS
+
+```perl
 use CCAI;
 
 # Initialize the client
@@ -359,6 +549,39 @@ The CCAI client automatically configures SSL certificates using the Mozilla::CA 
    ```bash
    export PERL_LWP_SSL_CA_FILE=/etc/ssl/certs/ca-certificates.crt
    ```
+
+## Warning Suppression
+
+The CCAI client may show harmless "Content-Length header value was wrong, fixed" warnings from LWP::UserAgent. These warnings don't affect functionality but can be suppressed:
+
+### Method 1: Environment Variable (Recommended)
+```bash
+# In your .env file
+CCAI_SUPPRESS_WARNINGS=1
+```
+
+### Method 2: Programmatically
+```perl
+my $ccai = CCAI->new({
+    client_id => $client_id,
+    api_key   => $api_key
+});
+
+# Suppress warnings after creating the client
+$ccai->suppress_lwp_warnings();
+```
+
+### Method 3: In Your Script
+```perl
+# At the beginning of your script
+BEGIN {
+    $SIG{__WARN__} = sub {
+        my $warning = shift;
+        return if $warning =~ /Content-Length header value was wrong, fixed/;
+        warn $warning;
+    };
+}
+```
 
 ## Error Handling
 

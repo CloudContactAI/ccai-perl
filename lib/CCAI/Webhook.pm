@@ -263,6 +263,9 @@ Parse a webhook event from JSON.
     
     if ($event->{type} eq 'message.sent') {
         print "Message sent to: $event->{to}\n";
+        if ($event->{customData}) {
+            print "Custom data: " . JSON->new->encode($event->{customData}) . "\n";
+        }
     } elsif ($event->{type} eq 'message.received') {
         print "Message received from: $event->{from}\n";
     }
@@ -271,8 +274,15 @@ Parameters:
 - json: JSON string from webhook request body
 
 Returns:
-- Hash reference with parsed event data
+- Hash reference with parsed event data (may include customData field)
 - undef if parsing fails
+
+Event data structure:
+- type: Event type (e.g., 'message.sent', 'message.received')
+- to/from: Phone number
+- message: Message content
+- timestamp: Event timestamp
+- customData: Custom data passed when sending the message (if any)
 
 =cut
 

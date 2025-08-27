@@ -79,6 +79,7 @@ Each account hash should contain:
 - first_name: Recipient's first name
 - last_name: Recipient's last name  
 - phone: Recipient's phone number (E.164 format)
+- customData: Optional hash reference with custom data to be included in webhooks
 
 Options hash can contain:
 - timeout: Optional timeout in milliseconds
@@ -176,7 +177,7 @@ sub send {
     return $response;
 }
 
-=head2 send_single($first_name, $last_name, $phone, $message, $title, \%options)
+=head2 send_single($first_name, $last_name, $phone, $message, $title, \%options, \%custom_data)
 
 Send a single SMS message to one recipient.
 
@@ -185,7 +186,9 @@ Send a single SMS message to one recipient.
         "Smith", 
         "+15559876543",
         "Hi \${first_name}, thanks for your interest!",
-        "Single Message Test"
+        "Single Message Test",
+        undef,  # options
+        { order_id => "12345", customer_type => "premium" }  # customData
     );
 
 Parameters:
@@ -195,6 +198,7 @@ Parameters:
 - message: The message to send (can include ${first_name} and ${last_name} variables)
 - title: Campaign title
 - options: Optional hash reference with settings
+- custom_data: Optional hash reference with custom data to be included in webhooks
 
 Returns a hash reference:
 - success: 1 for success, 0 for failure
@@ -204,13 +208,18 @@ Returns a hash reference:
 =cut
 
 sub send_single {
-    my ($self, $first_name, $last_name, $phone, $message, $title, $options) = @_;
+    my ($self, $first_name, $last_name, $phone, $message, $title, $options, $custom_data) = @_;
     
     my $account = {
         first_name => $first_name,
         last_name  => $last_name,
         phone      => $phone
     };
+    
+    # Add customData if provided
+    if ($custom_data && ref $custom_data eq 'HASH') {
+        $account->{customData} = $custom_data;
+    }
     
     return $self->send([$account], $message, $title, $options);
 }

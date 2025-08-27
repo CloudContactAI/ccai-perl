@@ -6,13 +6,35 @@ use 5.016;
 
 use lib '../lib', 'lib';
 use CCAI;
+use CCAI::EnvLoader;
+
+# Load environment variables from .env file
+CCAI::EnvLoader->load();
 
 # Example SMS usage
 sub main {
+    # Get credentials from environment variables
+    my ($client_id, $api_key);
+    
+    eval {
+        ($client_id, $api_key) = CCAI::EnvLoader->get_ccai_credentials();
+    };
+    if ($@) {
+        print "❌ Configuration Error:\n";
+        print $@;
+        print "\nPlease create a .env file with your CCAI credentials.\n";
+        print "You can copy .env.example to .env and fill in your credentials.\n";
+        return;
+    }
+    
+    print "🔧 Using credentials from environment variables\n";
+    print "Client ID: " . substr($client_id, 0, 8) . "...\n";
+    print "API Key: " . substr($api_key, 0, 8) . "...\n\n";
+
     # Initialize the client
     my $ccai = CCAI->new({
-        client_id => 'YOUR_CLIENT_ID',
-        api_key   => 'YOUR_API_KEY'
+        client_id => $client_id,
+        api_key   => $api_key
     });
 
     # Example 1: Send SMS to multiple recipients
