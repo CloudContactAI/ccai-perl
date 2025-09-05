@@ -18,8 +18,8 @@ sub main {
     # Define recipients
     my @accounts = (
         {
-            first_name => "John",
-            last_name  => "Doe",
+            firstName => "John",
+            lastName  => "Doe",
             phone      => "+14155551212"
         }
     );
@@ -42,7 +42,7 @@ sub main {
         'imagePERL.jpg',
         'image/jpeg',
         \@accounts,
-        "Hello \${first_name}, check out this Perl image!",
+        "Hello \${firstName}, check out this Perl image!",
         "Perl MMS Test Campaign",
         $options
     );

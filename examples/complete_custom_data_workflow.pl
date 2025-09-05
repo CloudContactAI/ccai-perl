@@ -16,7 +16,7 @@ CCAI::EnvLoader->load();
 # This example demonstrates the full lifecycle of customData from sending SMS to handling webhooks
 
 sub main {
-    print "CCAI Perl v1.3.0 - Complete CustomData Workflow\n";
+    print "CCAI Perl v1.4.0 - Complete CustomData Workflow\n";
     print "=" x 60 . "\n";
 
     # Get credentials from environment variables
@@ -50,8 +50,8 @@ sub main {
     # E-commerce order notifications
     my @ecommerce_accounts = (
         {
-            first_name => "John",
-            last_name  => "Doe",
+            firstName => "John",
+            lastName  => "Doe",
             phone      => "+14155551212",
             customData => {
                 order_id => "ORD-2025-001",
@@ -70,8 +70,8 @@ sub main {
             }
         },
         {
-            first_name => "Sarah",
-            last_name  => "Johnson",
+            firstName => "Sarah",
+            lastName  => "Johnson",
             phone      => "+14155551213",
             customData => {
                 order_id => "ORD-2025-002",
@@ -92,7 +92,7 @@ sub main {
 
     my $ecommerce_response = $ccai->sms->send(
         \@ecommerce_accounts,
-        "Hi \${first_name}! Your order has been confirmed and will arrive by your estimated delivery date. Thank you for shopping with us!",
+        "Hi \${firstName}! Your order has been confirmed and will arrive by your estimated delivery date. Thank you for shopping with us!",
         "E-commerce Order Confirmations"
     );
 
@@ -106,8 +106,8 @@ sub main {
     # Healthcare appointment reminders
     my @healthcare_accounts = (
         {
-            first_name => "Michael",
-            last_name  => "Brown",
+            firstName => "Michael",
+            lastName  => "Brown",
             phone      => "+14155551214",
             customData => {
                 appointment_id => "APPT-2025-100",
@@ -128,7 +128,7 @@ sub main {
 
     my $healthcare_response = $ccai->sms->send(
         \@healthcare_accounts,
-        "Hi \${first_name}, this is a reminder about your appointment tomorrow. Please arrive 15 minutes early.",
+        "Hi \${firstName}, this is a reminder about your appointment tomorrow. Please arrive 15 minutes early.",
         "Healthcare Appointment Reminders"
     );
 
@@ -144,7 +144,7 @@ sub main {
         "Lisa",
         "Davis",
         "+14155551215",
-        "Hi \${first_name}, your service appointment is scheduled for tomorrow between 2-4 PM.",
+        "Hi \${firstName}, your service appointment is scheduled for tomorrow between 2-4 PM.",
         "Service Appointment Notification",
         undef,  # options
         {       # customData

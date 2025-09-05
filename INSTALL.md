@@ -19,9 +19,9 @@
 3. **Try examples:**
    ```bash
    # Update credentials in examples first
-   perl -Ilib examples/sms_example.pl
-   perl -Ilib examples/mms_example.pl
-   perl -Ilib examples/comprehensive_example.pl
+   perl -Ilib examples/sms_send.pl
+   perl -Ilib examples/mms_send.pl
+   perl -Ilib examples/email_example.pl
    ```
 
 ## Installation Methods

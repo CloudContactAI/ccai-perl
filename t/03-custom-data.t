@@ -20,8 +20,8 @@ my $ccai = CCAI->new({
 {
     my @accounts = (
         {
-            first_name => "John",
-            last_name  => "Doe",
+            firstName => "John",
+            lastName  => "Doe",
             phone      => "+15551234567",
             customData => {
                 order_id => "ORD-12345",
@@ -44,7 +44,7 @@ my $ccai = CCAI->new({
     
     my $response = $ccai->sms->send(
         \@accounts,
-        "Hello \${first_name}!",
+        "Hello \${firstName}!",
         "Test Campaign"
     );
     
@@ -76,7 +76,7 @@ my $ccai = CCAI->new({
         "Jane",
         "Smith",
         "+15559876543",
-        "Hi \${first_name}!",
+        "Hi \${firstName}!",
         "Single Test",
         undef,  # options
         $custom_data
@@ -105,7 +105,7 @@ my $ccai = CCAI->new({
         "Bob",
         "Wilson",
         "+15551112222",
-        "Hi \${first_name}!",
+        "Hi \${firstName}!",
         "Backward Compatibility Test"
     );
     

@@ -22,11 +22,11 @@ CCAI::MMS - MMS service for the CCAI API
         'path/to/image.jpg',
         'image/jpeg',
         [{
-            first_name => "John",
-            last_name  => "Doe",
+            firstName => "John",
+            lastName  => "Doe",
             phone      => "+15551234567"
         }],
-        "Hello \${first_name}, check out this image!",
+        "Hello \${firstName}, check out this image!",
         "MMS Campaign"
     );
 
@@ -248,18 +248,18 @@ Send an MMS message with an uploaded image.
 
     my $response = $mms->send_mms(
         [{
-            first_name => "John",
-            last_name  => "Doe",
+            firstName => "John",
+            lastName  => "Doe",
             phone      => "+15551234567"
         }],
-        "Hello \${first_name}, check out this image!",
+        "Hello \${firstName}, check out this image!",
         "MMS Campaign",
         "client123/campaign/image.jpg"
     );
 
 Parameters:
 - accounts: Array reference of recipient hash references
-- message: The message to send (can include ${first_name} and ${last_name} variables)
+- message: The message to send (can include ${firstName} and ${lastName} variables)
 - title: Campaign title
 - file_key: The S3 file key from the upload process
 - options: Optional hash reference with settings
@@ -307,14 +307,14 @@ sub send_mms {
     for my $i (0 .. $#$accounts) {
         my $account = $accounts->[$i];
         
-        unless ($account->{first_name}) {
+        unless ($account->{firstName}) {
             return {
                 success => 0,
                 error   => "First name is required for account at index $i"
             };
         }
         
-        unless ($account->{last_name}) {
+        unless ($account->{lastName}) {
             return {
                 success => 0,
                 error   => "Last name is required for account at index $i"
@@ -371,11 +371,11 @@ Complete MMS workflow: get signed URL, upload image, and send MMS in one step.
         'path/to/image.jpg',
         'image/jpeg',
         [{
-            first_name => "John",
-            last_name  => "Doe",
+            firstName => "John",
+            lastName  => "Doe",
             phone      => "+15551234567"
         }],
-        "Hello \${first_name}, check out this image!",
+        "Hello \${firstName}, check out this image!",
         "MMS Campaign Example",
         {
             timeout     => 60000,
@@ -387,7 +387,7 @@ Parameters:
 - image_path: Local path to the image file
 - content_type: MIME type of the image
 - accounts: Array reference of recipient hash references
-- message: The message to send (can include ${first_name} and ${last_name} variables)
+- message: The message to send (can include ${firstName} and ${lastName} variables)
 - title: Campaign title
 - options: Optional hash reference with settings
 

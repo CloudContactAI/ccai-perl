@@ -16,11 +16,11 @@ CCAI::SMS - SMS service for the CCAI API
     
     my $response = $sms->send(
         [{
-            first_name => "John",
-            last_name  => "Doe",
+            firstName => "John",
+            lastName  => "Doe",
             phone      => "+15551234567"
         }],
-        "Hello \${first_name} \${last_name}!",
+        "Hello \${firstName} \${lastName}!",
         "Test Campaign"
     );
 
@@ -57,11 +57,11 @@ Send an SMS message to one or more recipients.
 
     my $response = $sms->send(
         [{
-            first_name => "John",
-            last_name  => "Doe", 
+            firstName => "John",
+            lastName  => "Doe", 
             phone      => "+15551234567"
         }],
-        "Hello \${first_name} \${last_name}!",
+        "Hello \${firstName} \${lastName}!",
         "Test Campaign",
         {
             timeout     => 60000,
@@ -71,13 +71,13 @@ Send an SMS message to one or more recipients.
 
 Parameters:
 - accounts: Array reference of recipient hash references
-- message: The message to send (can include ${first_name} and ${last_name} variables)
+- message: The message to send (can include ${firstName} and ${lastName} variables)
 - title: Campaign title
 - options: Optional hash reference with settings
 
 Each account hash should contain:
-- first_name: Recipient's first name
-- last_name: Recipient's last name  
+- firstName: Recipient's first name
+- lastName: Recipient's last name  
 - phone: Recipient's phone number (E.164 format)
 - customData: Optional hash reference with custom data to be included in webhooks
 
@@ -122,14 +122,14 @@ sub send {
     for my $i (0 .. $#$accounts) {
         my $account = $accounts->[$i];
         
-        unless ($account->{first_name}) {
+        unless ($account->{firstName}) {
             return {
                 success => 0,
                 error   => "First name is required for account at index $i"
             };
         }
         
-        unless ($account->{last_name}) {
+        unless ($account->{lastName}) {
             return {
                 success => 0,
                 error   => "Last name is required for account at index $i"
@@ -177,7 +177,7 @@ sub send {
     return $response;
 }
 
-=head2 send_single($first_name, $last_name, $phone, $message, $title, \%options, \%custom_data)
+=head2 send_single($firstName, $lastName, $phone, $message, $title, \%options, \%custom_data)
 
 Send a single SMS message to one recipient.
 
@@ -185,17 +185,17 @@ Send a single SMS message to one recipient.
         "Jane",
         "Smith", 
         "+15559876543",
-        "Hi \${first_name}, thanks for your interest!",
+        "Hi \${firstName}, thanks for your interest!",
         "Single Message Test",
         undef,  # options
         { order_id => "12345", customer_type => "premium" }  # customData
     );
 
 Parameters:
-- first_name: Recipient's first name
-- last_name: Recipient's last name
+- firstName: Recipient's first name
+- lastName: Recipient's last name
 - phone: Recipient's phone number (E.164 format)
-- message: The message to send (can include ${first_name} and ${last_name} variables)
+- message: The message to send (can include ${firstName} and ${lastName} variables)
 - title: Campaign title
 - options: Optional hash reference with settings
 - custom_data: Optional hash reference with custom data to be included in webhooks
@@ -208,11 +208,11 @@ Returns a hash reference:
 =cut
 
 sub send_single {
-    my ($self, $first_name, $last_name, $phone, $message, $title, $options, $custom_data) = @_;
+    my ($self, $firstName, $lastName, $phone, $message, $title, $options, $custom_data) = @_;
     
     my $account = {
-        first_name => $first_name,
-        last_name  => $last_name,
+        firstName => $firstName,
+        lastName  => $lastName,
         phone      => $phone
     };
     

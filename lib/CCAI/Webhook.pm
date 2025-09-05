@@ -255,34 +255,110 @@ sub verify_signature {
     return $signature eq $computed_signature ? 1 : 0;
 }
 
+=head2 handle_event($json, $callback)
+
+Parse and handle a CloudContact webhook event with a single unified function.
+
+    my $webhook = CCAI::Webhook->new($ccai);
+    
+    $webhook->handle_event($json_payload, sub {
+        my ($event_type, $data) = @_;
+        
+        if ($event_type eq 'message.sent') {
+            print "✅ Message delivered to $data->{To}\n";
+            print "   Cost: \$$data->{TotalPrice}\n";
+            print "   Segments: $data->{Segments}\n";
+        } elsif ($event_type eq 'message.incoming') {
+            print "📨 Reply from $data->{From}: $data->{Message}\n";
+        } elsif ($event_type eq 'message.excluded') {
+            print "⚠️ Message excluded: $data->{ExcludedReason}\n";
+        } elsif ($event_type eq 'message.error.carrier') {
+            print "❌ Carrier error $data->{ErrorCode}: $data->{ErrorMessage}\n";
+        } elsif ($event_type eq 'message.error.cloudcontact') {
+            print "🚨 System error $data->{ErrorCode}: $data->{ErrorMessage}\n";
+        }
+    });
+
+Parameters:
+- json: JSON string from webhook request body
+- callback: Code reference that receives ($event_type, $data)
+
+Supported Event Types:
+- message.sent: Message successfully delivered
+- message.incoming: Reply received from recipient
+- message.excluded: Message excluded during campaign
+- message.error.carrier: Carrier-level delivery failure
+- message.error.cloudcontact: CloudContact system error
+
+Returns:
+- 1 if event was successfully parsed and handled
+- 0 if parsing failed or invalid event
+
+=cut
+
+sub handle_event {
+    my ($self, $json, $callback) = @_;
+    
+    # Validate inputs
+    unless ($json && $callback && ref $callback eq 'CODE') {
+        return 0;
+    }
+    
+    # Parse JSON
+    my $event;
+    eval {
+        $event = $self->{ccai}->{json}->decode($json);
+    };
+    if ($@) {
+        return 0;
+    }
+    
+    # Validate CloudContact event structure
+    unless ($event->{eventType} && $event->{data}) {
+        return 0;
+    }
+    
+    my $event_type = $event->{eventType};
+    my $data = $event->{data};
+    
+    # Validate supported event types
+    my %supported_events = (
+        'message.sent' => 1,
+        'message.incoming' => 1,
+        'message.excluded' => 1,
+        'message.error.carrier' => 1,
+        'message.error.cloudcontact' => 1
+    );
+    
+    unless ($supported_events{$event_type}) {
+        return 0;
+    }
+    
+    # Call the callback with event type and data
+    eval {
+        $callback->($event_type, $data);
+    };
+    if ($@) {
+        return 0;
+    }
+    
+    return 1;
+}
+
 =head2 parse_event($json)
 
-Parse a webhook event from JSON.
+Parse a webhook event from JSON (legacy method for backward compatibility).
 
     my $event = $webhook->parse_event($json);
-    
-    if ($event->{type} eq 'message.sent') {
-        print "Message sent to: $event->{to}\n";
-        if ($event->{customData}) {
-            print "Custom data: " . JSON->new->encode($event->{customData}) . "\n";
-        }
-    } elsif ($event->{type} eq 'message.received') {
-        print "Message received from: $event->{from}\n";
-    }
 
 Parameters:
 - json: JSON string from webhook request body
 
 Returns:
-- Hash reference with parsed event data (may include customData field)
+- Hash reference with parsed event data
 - undef if parsing fails
 
-Event data structure:
-- type: Event type (e.g., 'message.sent', 'message.received')
-- to/from: Phone number
-- message: Message content
-- timestamp: Event timestamp
-- customData: Custom data passed when sending the message (if any)
+Note: This method is deprecated. Use handle_event() for new CloudContact event format.
 
 =cut
 
@@ -303,7 +379,15 @@ sub parse_event {
         return undef;
     }
     
-    # Validate event type
+    # Handle new CloudContact format
+    if ($event->{eventType} && $event->{data}) {
+        return {
+            type => $event->{eventType},
+            %{$event->{data}}
+        };
+    }
+    
+    # Handle legacy format
     unless ($event->{type}) {
         return undef;
     }

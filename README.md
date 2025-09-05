@@ -1,8 +1,29 @@
-# CCAI Perl Client v1.3.0
+# CCAI Perl Client v1.4.0
 
 A Perl client for the [CloudContactAI](https://cloudcontactai.com) API that allows you to easily send SMS and MMS messages, send email campaigns, and manage webhooks.
 
-## What's New in v1.3.0
+## What's New in v1.4.0
+
+### 🔄 Enhanced Webhook Support
+- **Unified Event Handler**: New `handle_event()` method processes all CloudContact webhook event types with a single function
+- **Support for 5 Event Types**: 
+  - `message.sent` - Message successfully delivered
+  - `message.incoming` - Reply received from recipient
+  - `message.excluded` - Message excluded during campaign
+  - `message.error.carrier` - Carrier-level delivery failure
+  - `message.error.cloudcontact` - CloudContact system error
+- **Simplified Integration**: Single callback function handles all event types
+- **Rich Event Data**: Access to pricing, segments, error codes, and custom data
+- **Backward Compatibility**: Existing `parse_event()` method still supported
+
+### 🧹 Code Cleanup
+- **Consistent Naming**: Updated all `first_name`/`last_name` to `firstName`/`lastName` (camelCase)
+- **Removed Redundant Files**: Cleaned up duplicate examples and utilities
+- **Updated Documentation**: All references updated to reflect current file structure
+
+### 📁 New Files
+- `unified_webhook_server.pl` - Complete webhook server using unified event handler
+- `examples/unified_webhook_example.pl` - Demonstrates all webhook event types
 
 - **CustomData Support**: Pass custom data with SMS messages that will be included in webhook events
 - Enhanced webhook event handling with custom data correlation
@@ -125,8 +146,8 @@ my $ccai = CCAI->new({
 # Send SMS with customData for webhook correlation
 my @accounts = (
     {
-        first_name => "John",
-        last_name  => "Doe",
+        firstName => "John",
+        lastName  => "Doe",
         phone      => "+15551234567",
         customData => {
             order_id => "ORD-12345",
@@ -136,8 +157,8 @@ my @accounts = (
         }
     },
     {
-        first_name => "Jane",
-        last_name  => "Smith", 
+        firstName => "Jane",
+        lastName  => "Smith", 
         phone      => "+15559876543",
         customData => {
             appointment_id => "APPT-789",
@@ -150,7 +171,7 @@ my @accounts = (
 
 my $response = $ccai->sms->send(
     \@accounts,
-    "Hello \${first_name} \${last_name}, this is a test message!",
+    "Hello \${firstName} \${lastName}, this is a test message!",
     "Test Campaign"
 );
 
@@ -166,7 +187,7 @@ my $single_response = $ccai->sms->send_single(
     "Alice",
     "Johnson",
     "+15559876544",
-    "Hi \${first_name}, your order is ready!",
+    "Hi \${firstName}, your order is ready!",
     "Order Ready Notification",
     undef,  # options
     {       # customData
@@ -253,20 +274,20 @@ my $ccai = CCAI->new({
 # Send an SMS to multiple recipients
 my @accounts = (
     {
-        first_name => "John",
-        last_name  => "Doe",
+        firstName => "John",
+        lastName  => "Doe",
         phone      => "+15551234567"
     },
     {
-        first_name => "Jane",
-        last_name  => "Smith", 
+        firstName => "Jane",
+        lastName  => "Smith", 
         phone      => "+15559876543"
     }
 );
 
 my $response = $ccai->sms->send(
     \@accounts,
-    "Hello \${first_name} \${last_name}, this is a test message!",
+    "Hello \${firstName} \${lastName}, this is a test message!",
     "Test Campaign"
 );
 
@@ -281,7 +302,7 @@ my $single_response = $ccai->sms->send_single(
     "Jane",
     "Smith",
     "+15559876543",
-    "Hi \${first_name}, thanks for your interest!",
+    "Hi \${firstName}, thanks for your interest!",
     "Single Message Test"
 );
 
@@ -324,8 +345,8 @@ sub send_mms_with_image {
     
     # Define recipient
     my @accounts = ({
-        first_name => 'John',
-        last_name  => 'Doe',
+        firstName => 'John',
+        lastName  => 'Doe',
         phone      => '+15551234567'
     });
     
@@ -334,7 +355,7 @@ sub send_mms_with_image {
         $image_path,
         $content_type,
         \@accounts,
-        "Hello \${first_name}, check out this image!",
+        "Hello \${firstName}, check out this image!",
         "MMS Campaign Example",
         $options
     );
@@ -368,7 +389,7 @@ my $response = $ccai->email->send_single(
     "Doe",                                     # Last name
     "john@example.com",                        # Email address
     "Welcome to Our Service",                  # Subject
-    "<p>Hello \${first_name},</p><p>Thank you for signing up!</p>",  # HTML message content
+    "<p>Hello \${firstName},</p><p>Thank you for signing up!</p>",  # HTML message content
     "noreply@yourcompany.com",                 # Sender email
     "support@yourcompany.com",                 # Reply-to email
     "Your Company",                            # Sender name
@@ -385,19 +406,19 @@ if ($response->{success}) {
 my $campaign = {
     subject => "Monthly Newsletter",
     title => "July 2025 Newsletter",
-    message => "<h1>Monthly Newsletter - July 2025</h1><p>Hello \${first_name},</p>",
+    message => "<h1>Monthly Newsletter - July 2025</h1><p>Hello \${firstName},</p>",
     sender_email => "newsletter@yourcompany.com",
     reply_email => "support@yourcompany.com",
     sender_name => "Your Company Newsletter",
     accounts => [
         {
-            first_name => "John",
-            last_name => "Doe",
+            firstName => "John",
+            lastName => "Doe",
             email => "john@example.com"
         },
         {
-            first_name => "Jane",
-            last_name => "Smith",
+            firstName => "Jane",
+            lastName => "Smith",
             email => "jane@example.com"
         }
     ],
@@ -419,6 +440,10 @@ if ($campaign_response->{success}) {
 
 ### Webhooks
 
+#### Unified Event Handler (Recommended)
+
+The new unified event handler processes all CloudContact webhook event types with a single callback function:
+
 ```perl
 use lib '.';
 use CCAI;
@@ -429,54 +454,109 @@ my $ccai = CCAI->new({
     api_key   => 'API-KEY-TOKEN'
 });
 
-# Register a webhook
+# Register a webhook for all event types
 my $webhook_response = $ccai->webhook->register({
     url => "https://example.com/webhook",
-    events => ["message.sent", "message.received"],
+    events => [
+        "message.sent", 
+        "message.incoming", 
+        "message.excluded",
+        "message.error.carrier",
+        "message.error.cloudcontact"
+    ],
     secret => "your-webhook-secret"
 });
 
 if ($webhook_response->{success}) {
     print "Webhook registered! ID: " . $webhook_response->{data}->{id} . "\n";
-    
-    # List all webhooks
-    my $list_response = $ccai->webhook->list();
-    
-    if ($list_response->{success}) {
-        foreach my $webhook (@{$list_response->{data}}) {
-            print "Webhook ID: $webhook->{id}, URL: $webhook->{url}\n";
-        }
-    }
-    
-    # Update a webhook
-    my $update_response = $ccai->webhook->update(
-        $webhook_response->{data}->{id},
-        {
-            url => "https://example.com/webhook-updated",
-            events => ["message.sent"]
-        }
-    );
-    
-    # Delete a webhook
-    my $delete_response = $ccai->webhook->delete($webhook_response->{data}->{id});
 }
 
-# Process a webhook event (in your webhook handler)
+# Process webhook events with unified handler
 sub process_webhook_event {
     my ($json, $signature, $secret) = @_;
     
     # Verify the signature
+    unless ($ccai->webhook->verify_signature($signature, $json, $secret)) {
+        print "❌ Invalid signature\n";
+        return;
+    }
+    
+    # Process event with unified handler
+    my $success = $ccai->webhook->handle_event($json, sub {
+        my ($event_type, $data) = @_;
+        
+        if ($event_type eq 'message.sent') {
+            print "✅ Message delivered to $data->{To}\n";
+            print "   💰 Cost: \$$data->{TotalPrice}\n" if $data->{TotalPrice};
+            print "   📊 Segments: $data->{Segments}\n" if $data->{Segments};
+            print "   📢 Campaign: $data->{CampaignTitle}\n" if $data->{CampaignTitle};
+            
+        } elsif ($event_type eq 'message.incoming') {
+            print "📨 Reply from $data->{From}: $data->{Message}\n";
+            print "   📢 Original Campaign: $data->{CampaignTitle}\n" if $data->{CampaignTitle};
+            
+        } elsif ($event_type eq 'message.excluded') {
+            print "⚠️  Message excluded: $data->{ExcludedReason}\n";
+            print "   📞 Target: $data->{To}\n";
+            
+        } elsif ($event_type eq 'message.error.carrier') {
+            print "❌ Carrier error $data->{ErrorCode}: $data->{ErrorMessage}\n";
+            print "   📞 Target: $data->{To}\n";
+            
+        } elsif ($event_type eq 'message.error.cloudcontact') {
+            print "🚨 System error $data->{ErrorCode}: $data->{ErrorMessage}\n";
+            print "   📞 Target: $data->{To}\n";
+        }
+        
+        # Show custom data if present
+        if ($data->{CustomData} && $data->{CustomData} ne '') {
+            print "   📋 Custom Data: $data->{CustomData}\n";
+        }
+    });
+    
+    unless ($success) {
+        print "❌ Failed to process webhook event\n";
+    }
+}
+```
+
+#### Supported Event Types
+
+- **`message.sent`** - Message successfully delivered to recipient
+  - Includes pricing information (`TotalPrice`) and segment count (`Segments`)
+  - Contains campaign details and custom data
+  
+- **`message.incoming`** - Reply received from recipient
+  - Contains the reply message and sender information
+  - Links back to original campaign if applicable
+  
+- **`message.excluded`** - Message excluded during campaign creation
+  - Provides exclusion reason (duplicate phone, invalid format, etc.)
+  - Helps track why certain contacts didn't receive messages
+  
+- **`message.error.carrier`** - Carrier-level delivery failure
+  - Contains carrier error codes (30008, 30007, etc.)
+  - Indicates network or carrier-specific issues
+  
+- **`message.error.cloudcontact`** - CloudContact system error
+  - Contains CCAI error codes (CCAI-001, CCAI-002, etc.)
+  - Indicates account or system configuration issues
+
+#### Legacy Event Processing (Backward Compatible)
+
+```perl
+# Legacy method still supported for backward compatibility
+sub process_webhook_event_legacy {
+    my ($json, $signature, $secret) = @_;
+    
     if ($ccai->webhook->verify_signature($signature, $json, $secret)) {
-        # Parse the event
         my $event = $ccai->webhook->parse_event($json);
         
         if ($event && $event->{type} eq "message.sent") {
-            print "Message sent to: $event->{to}\n";
-        } elsif ($event && $event->{type} eq "message.received") {
-            print "Message received from: $event->{from}\n";
+            print "Message sent to: $event->{To}\n";
+        } elsif ($event && $event->{type} eq "message.incoming") {
+            print "Message received from: $event->{From}\n";
         }
-    } else {
-        print "Invalid signature\n";
     }
 }
 ```
@@ -529,7 +609,7 @@ prove -lv t/01-basic.t
 - Support for sending email campaigns
 - Support for managing webhooks
 - Upload images to S3 with signed URLs
-- Support for template variables (first_name, last_name)
+- Support for template variables (firstName, lastName)
 - Progress tracking via callbacks
 - Comprehensive error handling
 - Unit tests
@@ -605,12 +685,12 @@ All methods return a hash reference with the following structure:
 
 Messages support template variables that are automatically replaced:
 
-- `${first_name}` - Replaced with recipient's first name
-- `${last_name}` - Replaced with recipient's last name
+- `${firstName}` - Replaced with recipient's first name
+- `${lastName}` - Replaced with recipient's last name
 
 Example:
 ```perl
-my $message = "Hello \${first_name} \${last_name}, welcome!";
+my $message = "Hello \${firstName} \${lastName}, welcome!";
 # For John Doe, becomes: "Hello John Doe, welcome!"
 ```
 

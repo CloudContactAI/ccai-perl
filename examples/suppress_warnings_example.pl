@@ -56,8 +56,8 @@ sub main {
     
     my @accounts = (
         {
-            first_name => "John",
-            last_name  => "Doe",
+            firstName => "John",
+            lastName  => "Doe",
             phone      => "+14155551212",
             customData => {
                 order_id => "ORD-12345",
@@ -69,7 +69,7 @@ sub main {
 
     my $response = $ccai->sms->send(
         \@accounts,
-        "Hello \${first_name} \${last_name}, your order has been confirmed!",
+        "Hello \${firstName} \${lastName}, your order has been confirmed!",
         "Test Campaign (No Warnings)"
     );
 

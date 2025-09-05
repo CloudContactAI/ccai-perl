@@ -2,6 +2,38 @@
 
 All notable changes to the CCAI Perl client will be documented in this file.
 
+## [1.4.0] - 2025-09-05
+
+### Added
+- **Unified Webhook Event Handler**: New `handle_event()` method in `CCAI::Webhook` that processes all CloudContact webhook event types with a single callback function
+- Support for 5 CloudContact webhook event types:
+  - `message.sent` - Message successfully delivered with pricing and segment info
+  - `message.incoming` - Reply received from recipient
+  - `message.excluded` - Message excluded during campaign with exclusion reason
+  - `message.error.carrier` - Carrier-level delivery failure with error codes
+  - `message.error.cloudcontact` - CloudContact system error with error details
+- New unified webhook server: `unified_webhook_server.pl`
+- New comprehensive webhook example: `examples/unified_webhook_example.pl`
+
+### Changed
+- **BREAKING**: Updated all parameter names from snake_case to camelCase:
+  - `first_name` → `firstName`
+  - `last_name` → `lastName`
+- Enhanced `CCAI::Webhook` module with unified event processing
+- Updated all examples and documentation to use camelCase parameters
+- Cleaned up redundant example files and utilities
+
+### Removed
+- Redundant webhook server implementations
+- Duplicate example files (`mms_example.pl`, `comprehensive_example.pl`, etc.)
+- Old webhook examples superseded by unified approach
+- Test files moved to proper test suite
+
+### Fixed
+- Updated MANIFEST to reflect current file structure
+- Corrected documentation references to existing files
+- Maintained backward compatibility for existing webhook parsing
+
 ## [1.3.0] - 2025-08-27
 
 ### Added
@@ -13,7 +45,6 @@ All notable changes to the CCAI Perl client will be documented in this file.
 - Updated webhook event parsing to handle customData in webhook events
 - Comprehensive examples demonstrating customData usage:
   - `examples/sms_custom_data_example.pl` - SMS sending with customData
-  - `examples/webhook_custom_data_example.pl` - Webhook handling with customData
   - `examples/complete_custom_data_workflow.pl` - End-to-end workflow example
 - New test suite `t/03-custom-data.t` for customData functionality
 - New test suite `t/04-env-loader.t` for environment variable loading
@@ -58,8 +89,8 @@ All notable changes to the CCAI Perl client will be documented in this file.
 ```perl
 my @accounts = (
     {
-        first_name => "John",
-        last_name  => "Doe",
+        firstName => "John",
+        lastName  => "Doe",
         phone      => "+15551234567",
         customData => {
             order_id => "ORD-12345",

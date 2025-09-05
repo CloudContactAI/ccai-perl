@@ -36,7 +36,7 @@ sub send_single_email {
         "Doe",                                     # Last name
         "andreas\@allcode.com",                   # Email address
         "Welcome to Our Service",                  # Subject
-        "<p>Hello \${first_name},</p><p>Thank you for signing up for our service!</p><p>Best regards,<br>The Team</p>",  # HTML message content
+        "<p>Hello \${firstName},</p><p>Thank you for signing up for our service!</p><p>Best regards,<br>The Team</p>",  # HTML message content
         "noreply\@allcode.com",                   # Sender email
         "support\@allcode.com",                   # Reply-to email
         "CCAI Test",                               # Sender name
@@ -66,7 +66,7 @@ sub send_email_campaign {
         title => "July 2025 Newsletter",
         message => <<'HTML',
 <h1>Monthly Newsletter - July 2025</h1>
-<p>Hello ${first_name},</p>
+<p>Hello ${firstName},</p>
 <p>Here are our updates for this month:</p>
 <ul>
     <li>New feature: Email campaigns</li>
@@ -81,13 +81,13 @@ HTML
         sender_name => "CCAI Newsletter",
         accounts => [
             {
-                first_name => "John",
-                last_name => "Doe",
+                firstName => "John",
+                lastName => "Doe",
                 email => "john\@example.com"
             },
             {
-                first_name => "Jane",
-                last_name => "Smith",
+                firstName => "Jane",
+                lastName => "Smith",
                 email => "jane\@example.com"
             }
         ],
@@ -133,7 +133,7 @@ sub schedule_email_campaign {
         title => "Event Reminder Campaign",
         message => <<'HTML',
 <h1>Reminder: Upcoming Event</h1>
-<p>Hello ${first_name},</p>
+<p>Hello ${firstName},</p>
 <p>This is a reminder about our upcoming event tomorrow at 2:00 PM.</p>
 <p>We look forward to seeing you there!</p>
 <p>Best regards,<br>The Events Team</p>
@@ -143,8 +143,8 @@ HTML
         sender_name => "CCAI Events",
         accounts => [
             {
-                first_name => "John",
-                last_name => "Doe",
+                firstName => "John",
+                lastName => "Doe",
                 email => "john\@example.com"
             }
         ],

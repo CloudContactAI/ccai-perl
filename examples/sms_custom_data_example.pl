@@ -44,8 +44,8 @@ sub main {
     
     my @accounts = (
         {
-            first_name => "John",
-            last_name  => "Doe",
+            firstName => "John",
+            lastName  => "Doe",
             phone      => "+14155551212",
             customData => {
                 order_id => "ORD-12345"
@@ -55,7 +55,7 @@ sub main {
 
     my $response = $ccai->sms->send(
         \@accounts,
-        "Hello \${first_name} \${last_name}, your order has been confirmed!",
+        "Hello \${firstName} \${lastName}, your order has been confirmed!",
         "Order Confirmation Campaign"
     );
 
@@ -82,7 +82,7 @@ sub main {
         "Alice",
         "Johnson",
         "+14155551212",
-        "Hi \${first_name}, this is a reminder about your appointment tomorrow.",
+        "Hi \${firstName}, this is a reminder about your appointment tomorrow.",
         "Appointment Reminder",
         undef,  # options
         $custom_data
@@ -104,8 +104,8 @@ sub main {
     
     my @varied_accounts = (
         {
-            first_name => "Bob",
-            last_name  => "Wilson",
+            firstName => "Bob",
+            lastName  => "Wilson",
             phone      => "+14155551212",
             customData => {
                 cart_id => "CART-456"
@@ -115,7 +115,7 @@ sub main {
 
     my $varied_response = $ccai->sms->send(
         \@varied_accounts,
-        "Hi \${first_name}, we have an update for you!",
+        "Hi \${firstName}, we have an update for you!",
         "Multi-Purpose Notification Campaign"
     );
 
@@ -126,7 +126,7 @@ sub main {
         print "\nCustom data examples sent:\n";
         for my $i (0 .. $#varied_accounts) {
             my $account = $varied_accounts[$i];
-            print "- " . $account->{first_name} . " " . $account->{last_name} . ": ";
+            print "- " . $account->{firstName} . " " . $account->{lastName} . ": ";
             print "Contains " . scalar(keys %{$account->{customData}}) . " custom fields\n";
         }
     } else {

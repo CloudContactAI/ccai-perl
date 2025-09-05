@@ -18,14 +18,14 @@ CCAI::Email - Email service for the CCAI API
         {
             subject => "Test Subject",
             title => "Test Campaign",
-            message => "<p>Hello \${first_name},</p><p>This is a test email.</p>",
+            message => "<p>Hello \${firstName},</p><p>This is a test email.</p>",
             sender_email => "sender@example.com",
             reply_email => "reply@example.com",
             sender_name => "Test Sender",
             accounts => [
                 {
-                    first_name => "John",
-                    last_name => "Doe",
+                    firstName => "John",
+                    lastName => "Doe",
                     email => "john@example.com"
                 }
             ]
@@ -68,14 +68,14 @@ Send an email campaign to one or more recipients.
         {
             subject => "Test Subject",
             title => "Test Campaign",
-            message => "<p>Hello \${first_name},</p><p>This is a test email.</p>",
+            message => "<p>Hello \${firstName},</p><p>This is a test email.</p>",
             sender_email => "sender@example.com",
             reply_email => "reply@example.com",
             sender_name => "Test Sender",
             accounts => [
                 {
-                    first_name => "John",
-                    last_name => "Doe",
+                    firstName => "John",
+                    lastName => "Doe",
                     email => "john@example.com"
                 }
             ],
@@ -121,8 +121,8 @@ Optional campaign fields:
 - flux_id: Optional flux ID
 
 Each account hash should contain:
-- first_name: Recipient's first name
-- last_name: Recipient's last name
+- firstName: Recipient's first name
+- lastName: Recipient's last name
 - email: Recipient's email address
 
 Options hash can contain:
@@ -201,14 +201,14 @@ sub send_campaign {
     for my $i (0 .. $#{$campaign->{accounts}}) {
         my $account = $campaign->{accounts}->[$i];
         
-        unless ($account->{first_name}) {
+        unless ($account->{firstName}) {
             return {
                 success => 0,
                 error => "First name is required for account at index $i"
             };
         }
         
-        unless ($account->{last_name}) {
+        unless ($account->{lastName}) {
             return {
                 success => 0,
                 error => "Last name is required for account at index $i"
@@ -275,7 +275,7 @@ sub send_campaign {
     return $response;
 }
 
-=head2 send_single($first_name, $last_name, $email, $subject, $message, $sender_email, $reply_email, $sender_name, $title, \%options)
+=head2 send_single($firstName, $lastName, $email, $subject, $message, $sender_email, $reply_email, $sender_name, $title, \%options)
 
 Send a single email to one recipient.
 
@@ -292,8 +292,8 @@ Send a single email to one recipient.
     );
 
 Parameters:
-- first_name: Recipient's first name
-- last_name: Recipient's last name
+- firstName: Recipient's first name
+- lastName: Recipient's last name
 - email: Recipient's email address
 - subject: Email subject
 - message: HTML message content
@@ -311,11 +311,11 @@ Returns a hash reference:
 =cut
 
 sub send_single {
-    my ($self, $first_name, $last_name, $email, $subject, $message, $sender_email, $reply_email, $sender_name, $title, $options) = @_;
+    my ($self, $firstName, $lastName, $email, $subject, $message, $sender_email, $reply_email, $sender_name, $title, $options) = @_;
     
     my $account = {
-        first_name => $first_name,
-        last_name => $last_name,
+        firstName => $firstName,
+        lastName => $lastName,
         email => $email
     };
     

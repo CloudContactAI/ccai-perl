@@ -38,20 +38,20 @@ sub main {
     });
 
     # Example 1: Send SMS to multiple recipients
-    print "Example 1: Sending SMS to multiple recipients\n";
+    print "Testing Webhook\n";
     print "=" x 50 . "\n";
     
     my @accounts = (
         {
-            first_name => "John",
-            last_name  => "Doe",
-            phone      => "+14155551212"
+            firstName => "Andreas",
+            lastName  => "Philip",
+            phone      => "+14156961732"
         },
     );
 
     my $response = $ccai->sms->send(
         \@accounts,
-        "Hello \${first_name} \${last_name}, this is a test message from Perl!",
+        "Hello \${firstName} \${lastName}, this is a test message from Perl!",
         "Perl SMS Test Campaign"
     );
 
@@ -66,7 +66,7 @@ sub main {
     print "\n";
 
     # Example 2: Send SMS to a single recipient with progress tracking
-    print "Example 2: Sending SMS to single recipient with progress tracking\n";
+    print "Testing more webhook\n";
     print "=" x 50 . "\n";
     
     my $progress_callback = sub {
@@ -80,10 +80,10 @@ sub main {
     };
 
     my $single_response = $ccai->sms->send_single(
-        "Alice",
-        "Johnson",
-        "+14155551212",
-        "Hi \${first_name}, this is a personalized message just for you!",
+        "AllCode",
+        "Test",
+        "+14158906431",
+        "Hi \${firstName}, this is a personalized message just for you!",
         "Single SMS Test",
         $options
     );

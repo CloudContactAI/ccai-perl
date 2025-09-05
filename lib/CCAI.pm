@@ -35,7 +35,7 @@ use CCAI::MMS;
 use CCAI::Email;
 use CCAI::Webhook;
 
-our $VERSION = '1.3.0';
+our $VERSION = '1.4.0';
 
 =head1 NAME
 
@@ -53,11 +53,11 @@ CCAI - Perl client for the Cloud Contact AI API
     # Send SMS
     my $response = $ccai->sms->send(
         [{
-            first_name => "John",
-            last_name  => "Doe", 
+            firstName => "John",
+            lastName  => "Doe", 
             phone      => "+15551234567"
         }],
-        "Hello \${first_name}!",
+        "Hello \${firstName}!",
         "Test Campaign"
     );
     
@@ -67,7 +67,7 @@ CCAI - Perl client for the Cloud Contact AI API
         "Doe",
         "john@example.com",
         "Welcome to Our Service",
-        "<p>Hello \${first_name},</p><p>Thank you for signing up!</p>",
+        "<p>Hello \${firstName},</p><p>Thank you for signing up!</p>",
         "noreply@yourcompany.com",
         "support@yourcompany.com",
         "Your Company",
