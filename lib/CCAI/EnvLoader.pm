@@ -160,6 +160,6 @@ CloudContactAI LLC
 
 MIT License
 
-Copyright (c) 2025 CloudContactAI LLC
+Copyright (c) 2026 CloudContactAI LLC
 
 =cut

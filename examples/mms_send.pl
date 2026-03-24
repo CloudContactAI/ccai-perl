@@ -6,45 +6,43 @@ use 5.016;
 
 use lib '../lib', 'lib';
 use CCAI;
+use CCAI::EnvLoader;
 
-# Example MMS usage
+# Load environment variables from .env file
+CCAI::EnvLoader->load();
+
 sub main {
-    # Initialize the client
+    my ($client_id, $api_key);
+    eval { ($client_id, $api_key) = CCAI::EnvLoader->get_ccai_credentials() };
+    if ($@) {
+        print "❌ Configuration Error:\n$@\n";
+        return;
+    }
+
+    print "🔧 Using credentials from environment variables\n";
+    print "Client ID: " . substr($client_id, 0, 8) . "...\n\n";
+
     my $ccai = CCAI->new({
-        client_id => 'YOUR_CLIENT_ID',
-        api_key   => 'YOUR_API_KEY'
+        client_id            => $client_id,
+        api_key              => $api_key,
+        use_test_environment => 1,
     });
 
-    # Define recipients
     my @accounts = (
         {
             firstName => "John",
             lastName  => "Doe",
-            phone      => "+14155551212"
+            phone     => "+14152440933"
         }
     );
 
-    # Progress callback
-    my $progress_callback = sub {
-        my $status = shift;
-        print "Progress: $status\n";
-    };
+    print "Sending MMS with CloudContactAI.png...\n";
 
-    my $options = {
-        timeout     => 60000,
-        on_progress => $progress_callback
-    };
-
-    # Send MMS with image
-    print "Sending MMS with imagePERL.jpg...\n";
-    
     my $response = $ccai->mms->send_with_image(
-        'imagePERL.jpg',
-        'image/jpeg',
         \@accounts,
-        "Hello \${firstName}, check out this Perl image!",
+        "Hello \${firstName}, check out this CCAI image!",
         "Perl MMS Test Campaign",
-        $options
+        "CloudContactAI.png"
     );
 
     if ($response->{success}) {
@@ -55,7 +53,6 @@ sub main {
     }
 }
 
-# Run the example
 main() unless caller;
 
 1;

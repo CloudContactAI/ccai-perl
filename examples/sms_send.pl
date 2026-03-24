@@ -33,8 +33,9 @@ sub main {
 
     # Initialize the client
     my $ccai = CCAI->new({
-        client_id => $client_id,
-        api_key   => $api_key
+        client_id            => $client_id,
+        api_key              => $api_key,
+        use_test_environment => 1,
     });
 
     # Example 1: Send SMS to multiple recipients
@@ -45,13 +46,13 @@ sub main {
         {
             firstName => "Andreas",
             lastName  => "Philip",
-            phone      => "+14156961732"
+            phone      => "+14158906431"
         },
     );
 
     my $response = $ccai->sms->send(
         \@accounts,
-        "Hello \${firstName} \${lastName}, this is a test message from Perl!",
+        "Hello \${firstName} \${lastName}, this is a test message from Perl2!",
         "Perl SMS Test Campaign"
     );
 
@@ -80,10 +81,10 @@ sub main {
     };
 
     my $single_response = $ccai->sms->send_single(
-        "AllCode",
-        "Test",
+        "Andreas",
+        "Philip",
         "+14158906431",
-        "Hi \${firstName}, this is a personalized message just for you!",
+        "Hi \${firstName}, this is a personalized message just for you!2",
         "Single SMS Test",
         $options
     );

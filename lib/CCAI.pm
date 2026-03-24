@@ -35,7 +35,7 @@ use CCAI::MMS;
 use CCAI::Email;
 use CCAI::Webhook;
 
-our $VERSION = '1.4.0';
+our $VERSION = '1.5.0';
 
 =head1 NAME
 
@@ -93,9 +93,9 @@ easily send SMS and MMS messages, send email campaigns, and manage webhooks.
 Creates a new CCAI client instance.
 
     my $ccai = CCAI->new({
-        client_id => 'YOUR-CLIENT-ID',
-        api_key   => 'API-KEY-TOKEN',
-        base_url  => 'https://core.cloudcontactai.com/api'  # optional
+        client_id            => 'YOUR-CLIENT-ID',
+        api_key              => 'API-KEY-TOKEN',
+        use_test_environment => 0,  # optional, defaults to 0
     });
 
 Required parameters:
@@ -103,7 +103,11 @@ Required parameters:
 - api_key: Your CCAI API key
 
 Optional parameters:
-- base_url: Base URL for the API (defaults to https://core.cloudcontactai.com/api)
+- use_test_environment: Use test environment URLs (defaults to 0/false)
+- base_url: Override base URL for SMS/MMS API
+- email_url: Override email API URL
+- auth_url: Override auth API URL
+- files_url: Override files API URL
 
 =cut
 
@@ -134,7 +138,7 @@ sub new {
     
     # Create UserAgent
     my $ua = LWP::UserAgent->new(
-        agent   => "CCAI-Perl/$VERSION",
+        agent   => "Faraday v2.12.2",
         timeout => 30
     );
     
@@ -159,12 +163,16 @@ sub new {
         };
     }
     
+    my $use_test = $config->{use_test_environment} || 0;
+
     my $self = {
-        client_id => $config->{client_id},
-        api_key   => $config->{api_key},
-        base_url  => $config->{base_url} || 'https://core.cloudcontactai.com/api',
-        email_url => $config->{email_url} || 'https://email-campaigns.cloudcontactai.com',
-        auth_url  => $config->{auth_url} || 'https://auth.cloudcontactai.com',
+        client_id            => $config->{client_id},
+        api_key              => $config->{api_key},
+        use_test_environment => $use_test,
+        base_url  => $config->{base_url}  || ($use_test ? 'https://core-test-cloudcontactai.allcode.com/api'              : 'https://core.cloudcontactai.com/api'),
+        email_url => $config->{email_url} || ($use_test ? 'https://email-campaigns-test-cloudcontactai.allcode.com/api/v1' : 'https://email-campaigns.cloudcontactai.com'),
+        auth_url  => $config->{auth_url}  || ($use_test ? 'https://auth-test-cloudcontactai.allcode.com'                   : 'https://auth.cloudcontactai.com'),
+        files_url => $config->{files_url} || ($use_test ? 'https://files-test-cloudcontactai.allcode.com'                  : 'https://files.cloudcontactai.com'),
         ua        => $ua,
         json      => JSON->new->utf8
     };
@@ -318,6 +326,28 @@ sub get_auth_url {
     return $self->{auth_url};
 }
 
+=head2 get_files_url
+
+Returns the files URL.
+
+=cut
+
+sub get_files_url {
+    my $self = shift;
+    return $self->{files_url};
+}
+
+=head2 is_test_environment
+
+Returns whether the test environment is enabled.
+
+=cut
+
+sub is_test_environment {
+    my $self = shift;
+    return $self->{use_test_environment};
+}
+
 =head2 request($method, $endpoint, $data)
 
 Makes an authenticated API request to the CCAI API.
@@ -408,7 +438,7 @@ CloudContactAI LLC
 
 MIT License
 
-Copyright (c) 2025 CloudContactAI LLC
+Copyright (c) 2026 CloudContactAI LLC
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
