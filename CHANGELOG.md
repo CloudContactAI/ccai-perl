@@ -2,6 +2,36 @@
 
 All notable changes to the CCAI Perl client will be documented in this file.
 
+## [1.5.0] - 2026-03-24
+
+### Added
+- **Test Environment Support**: New `use_test_environment` config option that automatically switches all API URLs (core, email, auth, files) to test environment domains
+- **`files_url` config**: New files API URL, used by MMS for image uploads
+- **`get_files_url()` / `is_test_environment()` getters** on the CCAI client
+- **MMS MD5 deduplication**: Images are hashed and checked via `check_file_uploaded()` before uploading, avoiding redundant uploads
+- **MMS auto content-type detection**: Inferred from file extension (jpg, jpeg, png, gif) — no longer required as a parameter
+- **MMS `send_single()` method**: Convenience method for single-recipient MMS
+- **MMS `senderPhone` support**: Optional sender phone on `send` and `send_with_image`
+- **Webhook `--demo` mode**: `unified_webhook_server.pl --demo` runs example payloads locally without starting a server
+
+### Changed
+- **BREAKING**: `send_with_image()` signature changed — content type is no longer a parameter, auto-detected from file extension. New signature: `send_with_image(\@accounts, $message, $title, $image_path, $sender_phone)`
+- MMS module uses `get_files_url()` from config instead of hardcoded URL
+- Removed `File::Slurp` dependency from MMS module (uses native file I/O)
+- Merged `examples/unified_webhook_example.pl` into `unified_webhook_server.pl` as `--demo` mode
+- Cleaned up README — removed duplicate sections, consolidated examples
+
+### Removed
+- `diagnose_env.pl` — one-time diagnostic utility
+- `verify_ssl.pl` — one-time SSL troubleshooting script
+- `run_sms_example.sh` — unnecessary shell wrapper
+- `imagePERL.jpg` — unused test image at root
+- `INSTALL.md` — installation covered in README
+- `MANIFEST` — not needed for GitHub repo
+- `examples/complete_custom_data_workflow.pl` — redundant with other examples
+- `examples/suppress_warnings_example.pl` — single-purpose example
+- `examples/unified_webhook_example.pl` — merged into `unified_webhook_server.pl`
+
 ## [1.4.0] - 2025-09-05
 
 ### Added
