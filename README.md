@@ -38,9 +38,6 @@ cpanm --installdeps .
 cp .env.example .env
 # Edit .env and add your CCAI credentials
 
-# Verify SSL configuration
-perl verify_ssl.pl
-
 # Test with examples
 cd examples
 perl sms_send.pl
