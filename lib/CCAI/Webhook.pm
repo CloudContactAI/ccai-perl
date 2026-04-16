@@ -5,7 +5,8 @@ use warnings;
 use 5.016;
 
 use Carp qw(croak);
-use Digest::SHA qw(hmac_sha256_hex);
+use Digest::SHA qw(hmac_sha256);
+use MIME::Base64 qw(encode_base64);
 
 =head1 NAME
 
@@ -80,40 +81,34 @@ Returns a hash reference:
 
 sub register {
     my ($self, $config) = @_;
-    
+
     # Validate inputs
     unless ($config && ref $config eq 'HASH') {
-        return {
-            success => 0,
-            error => 'Webhook configuration is required'
-        };
+        return { success => 0, error => 'Webhook configuration is required' };
     }
-    
+
     unless ($config->{url}) {
-        return {
-            success => 0,
-            error => 'URL is required'
-        };
+        return { success => 0, error => 'URL is required' };
     }
-    
-    unless ($config->{events} && ref $config->{events} eq 'ARRAY' && @{$config->{events}} > 0) {
-        return {
-            success => 0,
-            error => 'At least one event type is required'
-        };
+
+    my $client_id = $self->{ccai}->get_client_id();
+    my $payload = [{
+        url             => $config->{url},
+        method          => 'POST',
+        integrationType => $config->{integration_type} // 'ALL',
+    }];
+
+    # Only include secretKey if explicitly provided
+    if (defined $config->{secret}) {
+        $payload->[0]->{secretKey} = $config->{secret};
     }
-    
-    # Prepare the API request data
-    my $request_data = {
-        url => $config->{url},
-        events => $config->{events}
-    };
-    
-    # Add secret if provided
-    $request_data->{secret} = $config->{secret} if defined $config->{secret};
-    
-    # Make the API request
-    return $self->{ccai}->request('POST', '/webhooks', $request_data);
+
+    my $result = $self->{ccai}->request('POST', "/v1/client/$client_id/integration", $payload);
+    return $result unless $result->{success};
+
+    # Unwrap first element from array response
+    my $data = ref $result->{data} eq 'ARRAY' ? $result->{data}[0] : $result->{data};
+    return { success => 1, data => $data };
 }
 
 =head2 update($id, \%config)
@@ -142,32 +137,33 @@ Returns a hash reference:
 
 sub update {
     my ($self, $id, $config) = @_;
-    
-    # Validate inputs
+
     unless ($id) {
-        return {
-            success => 0,
-            error => 'Webhook ID is required'
-        };
+        return { success => 0, error => 'Webhook ID is required' };
     }
-    
+
     unless ($config && ref $config eq 'HASH') {
-        return {
-            success => 0,
-            error => 'Webhook configuration is required'
-        };
+        return { success => 0, error => 'Webhook configuration is required' };
     }
-    
-    # Prepare the API request data
-    my $request_data = {};
-    
-    # Add fields if provided
-    $request_data->{url} = $config->{url} if defined $config->{url};
-    $request_data->{events} = $config->{events} if defined $config->{events};
-    $request_data->{secret} = $config->{secret} if defined $config->{secret};
-    
-    # Make the API request
-    return $self->{ccai}->request('PUT', "/webhooks/$id", $request_data);
+
+    my $client_id = $self->{ccai}->get_client_id();
+    my $payload = [{
+        id              => $id + 0,
+        url             => $config->{url},
+        method          => 'POST',
+        integrationType => $config->{integration_type} // 'ALL',
+    }];
+
+    # Only include secretKey if explicitly provided
+    if (defined $config->{secret}) {
+        $payload->[0]->{secretKey} = $config->{secret};
+    }
+
+    my $result = $self->{ccai}->request('POST', "/v1/client/$client_id/integration", $payload);
+    return $result unless $result->{success};
+
+    my $data = ref $result->{data} eq 'ARRAY' ? $result->{data}[0] : $result->{data};
+    return { success => 1, data => $data };
 }
 
 =head2 list()
@@ -185,9 +181,9 @@ Returns a hash reference:
 
 sub list {
     my ($self) = @_;
-    
-    # Make the API request
-    return $self->{ccai}->request('GET', '/webhooks');
+
+    my $client_id = $self->{ccai}->get_client_id();
+    return $self->{ccai}->request('GET', "/v1/client/$client_id/integration");
 }
 
 =head2 delete($id)
@@ -208,32 +204,32 @@ Returns a hash reference:
 
 sub delete {
     my ($self, $id) = @_;
-    
-    # Validate inputs
+
     unless ($id) {
-        return {
-            success => 0,
-            error => 'Webhook ID is required'
-        };
+        return { success => 0, error => 'Webhook ID is required' };
     }
-    
-    # Make the API request
-    return $self->{ccai}->request('DELETE', "/webhooks/$id");
+
+    my $client_id = $self->{ccai}->get_client_id();
+    return $self->{ccai}->request('DELETE', "/v1/client/$client_id/integration/$id");
 }
 
-=head2 verify_signature($signature, $body, $secret)
+=head2 verify_signature($signature, $client_id, $event_hash, $secret)
 
-Verify a webhook signature.
+Verify a webhook signature using HMAC-SHA256.
+
+Signature is computed as: HMAC-SHA256(secretKey, clientId:eventHash) encoded in Base64
 
     my $is_valid = $webhook->verify_signature(
-        $signature,  # From X-CCAI-Signature header
-        $body,       # Raw request body
-        $secret      # Webhook secret
+        $signature,   # From X-CCAI-Signature header (Base64 encoded)
+        $client_id,   # Client ID
+        $event_hash,  # Event hash from the webhook payload
+        $secret       # Webhook secret
     );
 
 Parameters:
-- signature: Signature from the X-CCAI-Signature header
-- body: Raw request body
+- signature: Signature from the X-CCAI-Signature header (Base64 encoded)
+- client_id: Client ID
+- event_hash: Event hash from the webhook payload
 - secret: Webhook secret
 
 Returns:
@@ -243,16 +239,20 @@ Returns:
 =cut
 
 sub verify_signature {
-    my ($self, $signature, $body, $secret) = @_;
-    
+    my ($self, $signature, $client_id, $event_hash, $secret) = @_;
+
     # Validate inputs
-    return 0 unless $signature && $body && $secret;
-    
-    # Compute HMAC-SHA256 signature
-    my $computed_signature = hmac_sha256_hex($body, $secret);
-    
-    # Compare signatures
-    return $signature eq $computed_signature ? 1 : 0;
+    return 0 unless $signature && $client_id && $event_hash && $secret;
+
+    # Compute: HMAC-SHA256(secretKey, "$clientId:$eventHash")
+    my $data = "$client_id:$event_hash";
+    my $computed = hmac_sha256($data, $secret);
+
+    # Encode result in Base64 (remove trailing newline)
+    my $computed_base64 = encode_base64($computed, '');
+
+    # Constant-time comparison to prevent timing attacks
+    return $self->_constant_time_compare($signature, $computed_base64);
 }
 
 =head2 handle_event($json, $callback)
@@ -296,9 +296,40 @@ Returns:
 
 =cut
 
+# Constant-time string comparison to prevent timing attacks
+#
+# Compares two strings byte-by-byte without short-circuiting,
+# regardless of whether they match early in the string.
+#
+# @param a [Str] First string to compare
+# @param b [Str] Second string to compare
+# @return [Bool] 1 if strings match, 0 otherwise
+sub _constant_time_compare {
+    my ($self, $a, $b) = @_;
+
+    # If lengths differ, they don't match, but still compare all bytes
+    my $match = (length($a) == length($b)) ? 1 : 0;
+
+    my $len_a = length($a);
+    my $len_b = length($b);
+    my $max_len = $len_a > $len_b ? $len_a : $len_b;
+
+    # Compare all bytes (pad shorter string with nulls)
+    my @a_bytes = split //, $a;
+    my @b_bytes = split //, $b;
+
+    for (my $i = 0; $i < $max_len; $i++) {
+        my $a_byte = $i < $len_a ? ord($a_bytes[$i]) : 0;
+        my $b_byte = $i < $len_b ? ord($b_bytes[$i]) : 0;
+        $match &= ($a_byte == $b_byte) ? 1 : 0;
+    }
+
+    return $match;
+}
+
 sub handle_event {
     my ($self, $json, $callback) = @_;
-    
+
     # Validate inputs
     unless ($json && $callback && ref $callback eq 'CODE') {
         return 0;
