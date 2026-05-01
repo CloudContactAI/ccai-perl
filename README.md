@@ -1,6 +1,6 @@
 # CCAI Perl Client v1.5.0
 
-A Perl client for the [CloudContactAI](https://cloudcontactai.com) API that allows you to easily send SMS and MMS messages, send email campaigns, and manage webhooks.
+A Perl client for the [CloudContactAI](https://cloudcontactai.com) API that allows you to easily send SMS and MMS messages, send email campaigns, manage webhooks, and manage contact opt-out preferences.
 
 ## What's New in v1.5.0
 
@@ -250,25 +250,152 @@ my $campaign = {
 my $campaign_response = $ccai->email->send_campaign($campaign);
 ```
 
+### Contact
+
+Manage opt-out preferences for contacts.
+
+```perl
+my $ccai = CCAI->new({
+    client_id => 'YOUR-CLIENT-ID',
+    api_key   => 'API-KEY-TOKEN'
+});
+
+# Opt a contact out of text messages (by phone number)
+my $result = $ccai->contact->set_do_not_text(
+    do_not_text => 1,
+    phone       => '+15551234567'
+);
+print "Opted out: $result->{phone}\n" if $result->{success};
+
+# Opt a contact back in
+$ccai->contact->set_do_not_text(
+    do_not_text => 0,
+    phone       => '+15551234567'
+);
+
+# Opt out by contact_id
+$ccai->contact->set_do_not_text(
+    do_not_text => 1,
+    contact_id  => 'contact-abc-123'
+);
+```
+
 ### Webhooks
+
+#### Register a Webhook
+
+```perl
+use CCAI;
+use CCAI::Webhook;  # Import webhook types/constants
+
+# Example 1: Register with auto-generated secret
+# WebhookConfig: { url => Str, secret => Str|Undef, events => ArrayRef|Undef }
+# Returns: { success => Bool, data => { id => Int, url => Str, secretKey => Str } }
+my $webhook_config = {
+    url => "https://example.com/webhook"
+    # secret not provided - server will auto-generate and return it
+};
+
+my $webhook_response = $ccai->webhook->register($webhook_config);
+
+if ($webhook_response->{success}) {
+    my $webhook_id = $webhook_response->{data}->{id};           # Int
+    my $webhook_url = $webhook_response->{data}->{url};         # Str
+    my $webhook_secret = $webhook_response->{data}->{secretKey};  # Str
+    
+    print "Webhook registered with ID: $webhook_id\n";
+    print "Auto-generated Secret: $webhook_secret\n";
+}
+
+# Example 2: Register with custom secret and event types
+# Events array should contain event type constants from CCAI::Webhook
+my $webhook_config_custom = {
+    url    => "https://example.com/webhook-v2",
+    secret => "my-custom-secret-key",
+    # Optional: specify event types
+    events => [
+        CCAI::Webhook::EventType::MESSAGE_SENT,
+        CCAI::Webhook::EventType::MESSAGE_RECEIVED
+    ]
+};
+
+my $webhook_custom = $ccai->webhook->register($webhook_config_custom);
+if ($webhook_custom->{success}) {
+    print "Webhook with custom secret registered: " 
+        . $webhook_custom->{data}->{id} . "\n";
+}
+
+# List all webhooks
+# Returns: { success => Bool, data => ArrayRef[WebhookResponse] }
+my $list_response = $ccai->webhook->list();
+if ($list_response->{success}) {
+    my $webhooks = $list_response->{data};  # ArrayRef[HashRef]
+    print "Found " . scalar(@{$webhooks}) . " webhooks\n";
+    
+    foreach my $webhook (@{$webhooks}) {
+        my $id = $webhook->{id};         # Int
+        my $url = $webhook->{url};       # Str
+        my $secret = $webhook->{secretKey};  # Str (can be undef if user didn't set one)
+        
+        print "  - ID: $id, URL: $url\n";
+    }
+}
+
+# Update a webhook
+# Parameters: (webhookId: Int, config: WebhookConfig)
+# Returns: { success => Bool, data => WebhookResponse }
+my $webhook_id = $webhook_response->{data}->{id};  # Int
+my $update_config = {
+    url    => "https://example.com/webhook-updated",
+    secret => "updated-secret-key"
+};
+
+my $update_response = $ccai->webhook->update($webhook_id, $update_config);
+if ($update_response->{success}) {
+    print "Webhook updated successfully\n";
+}
+
+# Delete a webhook
+# Parameters: webhookId => Int
+# Returns: { success => Bool, message => Str }
+my $delete_response = $ccai->webhook->delete($webhook_id);
+if ($delete_response->{success}) {
+    print "Webhook deleted: " . $delete_response->{message} . "\n";
+} else {
+    print "Failed to delete webhook: " . $delete_response->{message} . "\n";
+}
+```
 
 #### Unified Event Handler (Recommended)
 
 ```perl
-# Register a webhook
-my $webhook_response = $ccai->webhook->register({
-    url    => "https://example.com/webhook",
-    events => ["message.sent", "message.incoming", "message.excluded",
-               "message.error.carrier", "message.error.cloudcontact"],
-    secret => "your-webhook-secret"
-});
-
 # Process webhook events with unified handler
+# Parameters:
+#   $json    => Str (JSON webhook payload)
+#   $signature => Str (webhook signature from X-CCAI-Signature header)
+#   $secret  => Str (webhook secret for verification)
+# Returns: Bool (true if event was processed, false if signature invalid)
 sub process_webhook_event {
     my ($json, $signature, $secret) = @_;
 
-    return unless $ccai->webhook->verify_signature($signature, $json, $secret);
+    # Parse the webhook payload to get client_id and event_hash
+    my $payload = JSON::decode_json($json);
+    
+    my $client_id = $ENV{CCAI_CLIENT_ID};   # Str
+    my $event_hash = $payload->{eventHash};  # Str
+    my $event_type = $payload->{eventType};  # Str: 'message.sent', 'message.received', etc.
+    my $event_data = $payload->{data};       # HashRef with event details
 
+    # Verify signature using 4-parameter format: (signature, clientId, eventHash, secret)
+    # Returns: Bool - true if signature matches, false otherwise
+    return unless $ccai->webhook->verify_signature(
+        $signature,   # Str from X-CCAI-Signature header
+        $client_id,   # Str from CCAI_CLIENT_ID env var
+        $event_hash,  # Str from webhook payload
+        $secret       # Str from webhook config
+    );
+
+    # Handle the event
     $ccai->webhook->handle_event($json, sub {
         my ($event_type, $data) = @_;
 
@@ -318,6 +445,7 @@ lib/
   CCAI/SMS.pm          # SMS service
   CCAI/MMS.pm          # MMS service
   CCAI/Email.pm        # Email service
+  CCAI/Contact.pm      # Contact service (opt-out)
   CCAI/Webhook.pm      # Webhook service
   CCAI/EnvLoader.pm    # Environment variable loader
 examples/              # Usage examples

@@ -124,6 +124,8 @@ Each account hash should contain:
 - firstName: Recipient's first name
 - lastName: Recipient's last name
 - email: Recipient's email address
+- data: Optional hash reference for variable substitution in email templates (wire: "data")
+- customAccountId: Optional external ID to link this account to an external system (wire: "customAccountId")
 
 Options hash can contain:
 - timeout: Optional timeout in milliseconds
@@ -136,6 +138,58 @@ Returns a hash reference:
 - error: Error message (on failure)
 
 =cut
+
+=head2 send(\@accounts, $subject, $message, $sender_email, $reply_email, $sender_name, $title, \%options)
+
+Send an email campaign to multiple recipients.
+
+    my $response = $email->send(
+        [{ firstName => "John", lastName => "Doe", email => "john@example.com" }],
+        "Welcome!",
+        "<p>Hello \${firstName}, welcome!</p>",
+        "noreply@example.com",
+        "support@example.com",
+        "My Company",
+        "Welcome Campaign"
+    );
+
+Parameters:
+- accounts: Array reference of recipient hash references
+- subject: Email subject
+- message: HTML message content
+- sender_email: Sender's email address
+- reply_email: Reply-to email address
+- sender_name: Sender's name
+- title: Optional campaign title (defaults to subject)
+- options: Optional hash reference with settings
+
+Returns a hash reference:
+- success: 1 for success, 0 for failure
+- data: Response data (on success)
+- error: Error message (on failure)
+
+=cut
+
+sub send {
+    my ($self, $accounts, $subject, $message, $sender_email, $reply_email, $sender_name, $title, $options) = @_;
+
+    my $campaign = {
+        subject       => $subject,
+        title         => $title || $subject,
+        message       => $message,
+        sender_email  => $sender_email,
+        reply_email   => $reply_email,
+        sender_name   => $sender_name,
+        accounts      => $accounts,
+        campaign_type => 'EMAIL',
+        add_to_list   => 'noList',
+        contact_input => 'accounts',
+        from_type     => 'single',
+        senders       => [],
+    };
+
+    return $self->send_campaign($campaign, $options);
+}
 
 sub send_campaign {
     my ($self, $campaign, $options) = @_;
@@ -275,7 +329,7 @@ sub send_campaign {
     return $response;
 }
 
-=head2 send_single($firstName, $lastName, $email, $subject, $message, $sender_email, $reply_email, $sender_name, $title, \%options)
+=head2 send_single($firstName, $lastName, $email, $subject, $message, $sender_email, $reply_email, $sender_name, $title, \%options, \%data, $custom_account_id)
 
 Send a single email to one recipient.
 
@@ -284,11 +338,14 @@ Send a single email to one recipient.
         "Doe",
         "john@example.com",
         "Welcome to Our Service",
-        "<p>Hello John,</p><p>Thank you for signing up!</p>",
+        "<p>Hello \${firstName},</p><p>You are on the \${plan} plan.</p>",
         "noreply@yourcompany.com",
         "support@yourcompany.com",
         "Your Company",
-        "Welcome Email"
+        "Welcome Email",
+        undef,                              # options
+        { plan => "premium" },              # data (template variables → wire: "data")
+        "ext-id-123"                        # custom_account_id (wire: "customAccountId")
     );
 
 Parameters:
@@ -302,6 +359,8 @@ Parameters:
 - sender_name: Sender's name
 - title: Campaign title
 - options: Optional hash reference with settings
+- data: Optional hash reference for variable substitution in email templates (wire: "data")
+- custom_account_id: Optional external ID to link this account to an external system (wire: "customAccountId")
 
 Returns a hash reference:
 - success: 1 for success, 0 for failure
@@ -311,21 +370,31 @@ Returns a hash reference:
 =cut
 
 sub send_single {
-    my ($self, $firstName, $lastName, $email, $subject, $message, $sender_email, $reply_email, $sender_name, $title, $options) = @_;
-    
+    my ($self, $firstName, $lastName, $email, $subject, $message, $text_content, $sender_email, $reply_email, $sender_name, $title, $options, $data, $custom_account_id) = @_;
+
     my $account = {
         firstName => $firstName,
-        lastName => $lastName,
-        email => $email
+        lastName  => $lastName,
+        email     => $email
     };
+
+    # Add data (template variable substitution) if provided
+    if ($data && ref $data eq 'HASH') {
+        $account->{data} = $data;
+    }
+
+    # Add customAccountId if provided
+    if (defined $custom_account_id && $custom_account_id ne '') {
+        $account->{customAccountId} = $custom_account_id;
+    }
     
     my $campaign = {
         subject => $subject,
-        title => $title,
+        title => $title || $subject,
         message => $message,
-        sender_email => $sender_email,
-        reply_email => $reply_email,
-        sender_name => $sender_name,
+        sender_email => $sender_email || 'noreply@cloudcontactai.com',
+        reply_email => $reply_email || 'noreply@cloudcontactai.com',
+        sender_name => $sender_name || 'CloudContactAI',
         accounts => [$account],
         campaign_type => 'EMAIL',
         add_to_list => 'noList',
@@ -333,6 +402,7 @@ sub send_single {
         from_type => 'single',
         senders => []
     };
+    $campaign->{text_content} = $text_content if defined $text_content && $text_content ne '';
     
     return $self->send_campaign($campaign, $options);
 }

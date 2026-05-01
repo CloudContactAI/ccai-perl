@@ -77,9 +77,10 @@ Parameters:
 
 Each account hash should contain:
 - firstName: Recipient's first name
-- lastName: Recipient's last name  
+- lastName: Recipient's last name
 - phone: Recipient's phone number (E.164 format)
-- customData: Optional hash reference with custom data to be included in webhooks
+- data: Optional hash reference for variable substitution in message templates (wire: "data")
+- messageData: Optional string forwarded as-is to your webhook handler (wire: "messageData")
 
 Options hash can contain:
 - timeout: Optional timeout in milliseconds
@@ -94,7 +95,7 @@ Returns a hash reference:
 =cut
 
 sub send {
-    my ($self, $accounts, $message, $title, $options) = @_;
+    my ($self, $accounts, $message, $title, $sender_phone, $options) = @_;
     
     # Validate inputs
     unless ($accounts && ref $accounts eq 'ARRAY' && @$accounts > 0) {
@@ -150,12 +151,22 @@ sub send {
     }
     
     my $endpoint = "/clients/" . $self->{ccai}->get_client_id() . "/campaigns/direct";
-    
+
+    # Map customData → messageData (API wire format)
+    my @mapped_accounts = map {
+        my %acc = %$_;
+        if (exists $acc{customData}) {
+            $acc{messageData} = delete $acc{customData};
+        }
+        \%acc;
+    } @$accounts;
+
     my $campaign_data = {
-        accounts => $accounts,
+        accounts => \@mapped_accounts,
         message  => $message,
         title    => $title
     };
+    $campaign_data->{senderPhone} = $sender_phone if $sender_phone;
     
     # Notify progress if callback provided
     if ($options && $options->{on_progress}) {
@@ -177,28 +188,30 @@ sub send {
     return $response;
 }
 
-=head2 send_single($firstName, $lastName, $phone, $message, $title, \%options, \%custom_data)
+=head2 send_single($firstName, $lastName, $phone, $message, $title, \%options, \%data, $message_data)
 
 Send a single SMS message to one recipient.
 
     my $response = $sms->send_single(
         "Jane",
-        "Smith", 
+        "Smith",
         "+15559876543",
-        "Hi \${firstName}, thanks for your interest!",
+        "Hi \${firstName}, from \${city}!",
         "Single Message Test",
-        undef,  # options
-        { order_id => "12345", customer_type => "premium" }  # customData
+        undef,                                        # options
+        { city => "Miami", plan => "premium" },       # data (template variables → wire: "data")
+        '{"orderId":"123","source":"checkout"}'       # message_data (webhook payload → wire: "messageData")
     );
 
 Parameters:
 - firstName: Recipient's first name
 - lastName: Recipient's last name
 - phone: Recipient's phone number (E.164 format)
-- message: The message to send (can include ${firstName} and ${lastName} variables)
+- message: The message to send (can include ${firstName}, ${lastName}, and any key from data)
 - title: Campaign title
 - options: Optional hash reference with settings
-- custom_data: Optional hash reference with custom data to be included in webhooks
+- data: Optional hash reference for variable substitution in message templates (sent as "data")
+- message_data: Optional string forwarded as-is to your webhook handler (sent as "messageData")
 
 Returns a hash reference:
 - success: 1 for success, 0 for failure
@@ -208,20 +221,25 @@ Returns a hash reference:
 =cut
 
 sub send_single {
-    my ($self, $firstName, $lastName, $phone, $message, $title, $options, $custom_data) = @_;
-    
+    my ($self, $firstName, $lastName, $phone, $message, $title, $options, $data, $message_data, $sender_phone) = @_;
+
     my $account = {
         firstName => $firstName,
         lastName  => $lastName,
-        phone      => $phone
+        phone     => $phone
     };
-    
-    # Add customData if provided
-    if ($custom_data && ref $custom_data eq 'HASH') {
-        $account->{customData} = $custom_data;
+
+    # Add data (template variable substitution) if provided
+    if ($data && ref $data eq 'HASH') {
+        $account->{data} = $data;
     }
-    
-    return $self->send([$account], $message, $title, $options);
+
+    # Add messageData (webhook payload string) if provided
+    if (defined $message_data && $message_data ne '') {
+        $account->{messageData} = $message_data;
+    }
+
+    return $self->send([$account], $message, $title, $sender_phone, $options);
 }
 
 1;

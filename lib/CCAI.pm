@@ -34,6 +34,7 @@ use CCAI::SMS;
 use CCAI::MMS;
 use CCAI::Email;
 use CCAI::Webhook;
+use CCAI::Contact;
 
 our $VERSION = '1.5.0';
 
@@ -170,7 +171,7 @@ sub new {
         api_key              => $config->{api_key},
         use_test_environment => $use_test,
         base_url  => $config->{base_url}  || ($use_test ? 'https://core-test-cloudcontactai.allcode.com/api'              : 'https://core.cloudcontactai.com/api'),
-        email_url => $config->{email_url} || ($use_test ? 'https://email-campaigns-test-cloudcontactai.allcode.com/api/v1' : 'https://email-campaigns.cloudcontactai.com'),
+        email_url => $config->{email_url} || ($use_test ? 'https://email-campaigns-test-cloudcontactai.allcode.com' : 'https://email-campaigns.cloudcontactai.com'),
         auth_url  => $config->{auth_url}  || ($use_test ? 'https://auth-test-cloudcontactai.allcode.com'                   : 'https://auth.cloudcontactai.com'),
         files_url => $config->{files_url} || ($use_test ? 'https://files-test-cloudcontactai.allcode.com'                  : 'https://files.cloudcontactai.com'),
         ua        => $ua,
@@ -180,10 +181,11 @@ sub new {
     bless $self, $class;
     
     # Initialize services
-    $self->{sms} = CCAI::SMS->new($self);
-    $self->{mms} = CCAI::MMS->new($self);
-    $self->{email} = CCAI::Email->new($self);
+    $self->{sms}     = CCAI::SMS->new($self);
+    $self->{mms}     = CCAI::MMS->new($self);
+    $self->{email}   = CCAI::Email->new($self);
     $self->{webhook} = CCAI::Webhook->new($self);
+    $self->{contact} = CCAI::Contact->new($self);
     
     # Auto-suppress warnings if environment variable is set
     $self->suppress_lwp_warnings() if $ENV{CCAI_SUPPRESS_WARNINGS};
@@ -269,6 +271,19 @@ Returns the Webhook service instance.
 sub webhook {
     my $self = shift;
     return $self->{webhook};
+}
+
+=head2 contact
+
+Returns the Contact service instance.
+
+    my $response = $ccai->contact->set_do_not_text(1, { phone => '+15551234567' });
+
+=cut
+
+sub contact {
+    my $self = shift;
+    return $self->{contact};
 }
 
 =head2 get_client_id

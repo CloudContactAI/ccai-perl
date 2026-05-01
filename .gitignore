@@ -58,3 +58,4 @@ cover_db/
 # Local configuration
 local/
 .carton/
+test_real.pl

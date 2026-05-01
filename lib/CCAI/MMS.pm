@@ -66,9 +66,19 @@ sub send {
     }
 
     my $endpoint = "/clients/" . $self->{ccai}->get_client_id() . "/campaigns/direct";
+
+    # Map customData → messageData (API wire format)
+    my @mapped_accounts = map {
+        my %acc = %$_;
+        if (exists $acc{customData}) {
+            $acc{messageData} = delete $acc{customData};
+        }
+        \%acc;
+    } @$accounts;
+
     my $data = {
         pictureFileKey => $file_key,
-        accounts       => $accounts,
+        accounts       => \@mapped_accounts,
         message        => $message,
         title          => $title,
     };
@@ -77,17 +87,19 @@ sub send {
     return $self->{ccai}->request('POST', $endpoint, $data);
 }
 
-=head2 send_single($first, $last, $phone, $message, $title, $file_key, $sender_phone)
+=head2 send_single($first, $last, $phone, $message, $title, $file_key, $custom_data, $sender_phone)
 
 Send MMS to a single recipient using an already-uploaded file key.
 
 =cut
 
 sub send_single {
-    my ($self, $first, $last, $phone, $message, $title, $image_path, $sender_phone) = @_;
-    return $self->send_with_image(
-        [{ firstName => $first, lastName => $last, phone => $phone }],
-        $message, $title, $image_path, $sender_phone
+    my ($self, $first, $last, $phone, $message, $title, $file_key, $custom_data, $sender_phone) = @_;
+    my $account = { firstName => $first, lastName => $last, phone => $phone };
+    $account->{messageData} = $custom_data if defined $custom_data && $custom_data ne '';
+    return $self->send(
+        [$account],
+        $message, $title, $file_key, $sender_phone
     );
 }
 
