@@ -2,7 +2,7 @@
 
 # CCAI Perl SDK Integration Tests
 #
-# Exercises all 31 public API methods against the test environment.
+# Exercises all 42 public API methods against the test environment.
 # Exits with code 1 if any test fails.
 
 use strict;
@@ -399,6 +399,149 @@ run_test('30 Contact set_do_not_text (opt-out)', sub {
 run_test('31 Contact set_do_not_text (opt-in)', sub {
     my $res = $ccai->contact->set_do_not_text(0, { phone => $phone1 });
     assert_success($res);
+});
+
+# ---------------------------------------------------------------------------
+# Brands Tests (32–36)
+# ---------------------------------------------------------------------------
+print "\n--- Brands ---\n";
+
+my $brand_id = undef;
+
+run_test('32 Brand create', sub {
+    my $res = $ccai->brand->create({
+        legalCompanyName   => 'Perl SDK Test Brand LLC',
+        dba                => 'Perl SDK Test Brand',
+        entityType         => 'PRIVATE_PROFIT',
+        taxId              => '123456789',
+        taxIdCountry       => 'US',
+        country            => 'US',
+        verticalType       => 'TECHNOLOGY',
+        websiteUrl         => 'https://example.com',
+        street             => '123 Test St',
+        city               => 'Miami',
+        state              => 'FL',
+        postalCode         => '33101',
+        contactFirstName   => 'Test',
+        contactLastName    => 'User',
+        contactEmail       => 'test@example.com',
+        contactPhone       => '+13055551234',
+    });
+    assert_success($res);
+    die "id missing from create response" unless $res->{data}{id};
+    $brand_id = $res->{data}{id};
+});
+
+run_test('33 Brand get', sub {
+    die "Dependency test 32 failed — skipping" unless $brand_id;
+    my $res = $ccai->brand->get($brand_id);
+    assert_success($res);
+});
+
+run_test('34 Brand list', sub {
+    my $res = $ccai->brand->list();
+    assert_success($res);
+});
+
+run_test('35 Brand update', sub {
+    die "Dependency test 32 failed — skipping" unless $brand_id;
+    my $res = $ccai->brand->update($brand_id, {
+        city => 'Fort Lauderdale',
+    });
+    assert_success($res);
+});
+
+run_test('36 Brand delete', sub {
+    die "Dependency test 32 failed — skipping" unless $brand_id;
+    my $res = $ccai->brand->delete($brand_id);
+    assert_success($res);
+});
+
+# ---------------------------------------------------------------------------
+# Campaigns Tests (37–42)
+# ---------------------------------------------------------------------------
+print "\n--- Campaigns ---\n";
+
+my $campaign_brand_id = undef;
+my $campaign_id       = undef;
+
+run_test('37 Campaign setup — Brand create', sub {
+    my $res = $ccai->brand->create({
+        legalCompanyName   => 'Perl SDK Campaign Brand LLC',
+        dba                => 'Perl SDK Campaign Brand',
+        entityType         => 'PRIVATE_PROFIT',
+        taxId              => '987654321',
+        taxIdCountry       => 'US',
+        country            => 'US',
+        verticalType       => 'TECHNOLOGY',
+        websiteUrl         => 'https://campaign-example.com',
+        street             => '456 Campaign Ave',
+        city               => 'Miami',
+        state              => 'FL',
+        postalCode         => '33102',
+        contactFirstName   => 'Campaign',
+        contactLastName    => 'Test',
+        contactEmail       => 'campaign@example.com',
+        contactPhone       => '+13055559999',
+    });
+    assert_success($res);
+    die "id missing from create response" unless $res->{data}{id};
+    $campaign_brand_id = $res->{data}{id};
+});
+
+run_test('38 Campaign create', sub {
+    die "Dependency test 37 failed — skipping" unless $campaign_brand_id;
+    my $res = $ccai->campaign->create({
+        brandId           => $campaign_brand_id,
+        useCase           => 'MARKETING',
+        description       => 'Perl SDK test campaign for integration testing',
+        messageFlow       => 'Users opt-in via our website form.',
+        hasEmbeddedLinks  => JSON::false,
+        hasEmbeddedPhone  => JSON::false,
+        isAgeGated        => JSON::false,
+        isDirectLending   => JSON::false,
+        optInKeywords     => ['START', 'YES'],
+        optInMessage      => 'You are now subscribed. Reply STOP to unsubscribe.',
+        optInProofUrl     => 'https://example.com/optin',
+        helpKeywords      => ['HELP', 'INFO'],
+        helpMessage       => 'For help, contact support@example.com. Reply HELP for assistance.',
+        optOutKeywords    => ['STOP', 'CANCEL'],
+        optOutMessage     => 'You have been unsubscribed. Reply STOP to opt out.',
+        sampleMessages    => [
+            'Hello! Reply STOP to unsubscribe.',
+            'Your code is 123456. Reply HELP for assistance.',
+        ],
+    });
+    assert_success($res);
+    die "id missing from create response" unless $res->{data}{id};
+    $campaign_id = $res->{data}{id};
+});
+
+run_test('39 Campaign get', sub {
+    die "Dependency test 38 failed — skipping" unless $campaign_id;
+    my $res = $ccai->campaign->get($campaign_id);
+    assert_success($res);
+});
+
+run_test('40 Campaign list', sub {
+    my $res = $ccai->campaign->list();
+    assert_success($res);
+});
+
+run_test('41 Campaign update', sub {
+    die "Dependency test 38 failed — skipping" unless $campaign_id;
+    my $res = $ccai->campaign->update($campaign_id, {
+        description => 'Perl SDK updated campaign description',
+    });
+    assert_success($res);
+});
+
+run_test('42 Campaign delete', sub {
+    die "Dependency test 38 failed — skipping" unless $campaign_id;
+    my $res = $ccai->campaign->delete($campaign_id);
+    assert_success($res);
+    # Clean up campaign brand
+    $ccai->brand->delete($campaign_brand_id) if $campaign_brand_id;
 });
 
 # ---------------------------------------------------------------------------

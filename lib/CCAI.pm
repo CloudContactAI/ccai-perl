@@ -35,6 +35,8 @@ use CCAI::MMS;
 use CCAI::Email;
 use CCAI::Webhook;
 use CCAI::Contact;
+use CCAI::Brand;
+use CCAI::Campaign;
 use CCAI::ContactValidator;
 
 our $VERSION = '1.6.0';
@@ -171,10 +173,11 @@ sub new {
         client_id            => $config->{client_id},
         api_key              => $config->{api_key},
         use_test_environment => $use_test,
-        base_url  => $config->{base_url}  || ($use_test ? 'https://core-test-cloudcontactai.allcode.com/api'              : 'https://core.cloudcontactai.com/api'),
-        email_url => $config->{email_url} || ($use_test ? 'https://email-campaigns-test-cloudcontactai.allcode.com' : 'https://email-campaigns.cloudcontactai.com'),
-        auth_url  => $config->{auth_url}  || ($use_test ? 'https://auth-test-cloudcontactai.allcode.com'                   : 'https://auth.cloudcontactai.com'),
-        files_url => $config->{files_url} || ($use_test ? 'https://files-test-cloudcontactai.allcode.com'                  : 'https://files.cloudcontactai.com'),
+        base_url        => $config->{base_url}        || ($use_test ? 'https://core-test-cloudcontactai.allcode.com/api'              : 'https://core.cloudcontactai.com/api'),
+        email_url       => $config->{email_url}       || ($use_test ? 'https://email-campaigns-test-cloudcontactai.allcode.com' : 'https://email-campaigns.cloudcontactai.com'),
+        auth_url        => $config->{auth_url}        || ($use_test ? 'https://auth-test-cloudcontactai.allcode.com'                   : 'https://auth.cloudcontactai.com'),
+        files_url       => $config->{files_url}       || ($use_test ? 'https://files-test-cloudcontactai.allcode.com'                  : 'https://files.cloudcontactai.com'),
+        compliance_url  => $config->{compliance_url}  || ($use_test ? 'https://compliance-test-cloudcontactai.allcode.com/api'         : 'https://compliance.cloudcontactai.com/api'),
         ua        => $ua,
         json      => JSON->new->utf8
     };
@@ -182,12 +185,14 @@ sub new {
     bless $self, $class;
     
     # Initialize services
-    $self->{sms}               = CCAI::SMS->new($self);
-    $self->{mms}               = CCAI::MMS->new($self);
-    $self->{email}             = CCAI::Email->new($self);
-    $self->{webhook}           = CCAI::Webhook->new($self);
-    $self->{contact}           = CCAI::Contact->new($self);
-    $self->{contact_validator} = CCAI::ContactValidator->new($self);
+    $self->{sms}                = CCAI::SMS->new($self);
+    $self->{mms}                = CCAI::MMS->new($self);
+    $self->{email}              = CCAI::Email->new($self);
+    $self->{webhook}            = CCAI::Webhook->new($self);
+    $self->{contact}            = CCAI::Contact->new($self);
+    $self->{brand}              = CCAI::Brand->new($self);
+    $self->{campaign}           = CCAI::Campaign->new($self);
+    $self->{contact_validator}  = CCAI::ContactValidator->new($self);
     
     # Auto-suppress warnings if environment variable is set
     $self->suppress_lwp_warnings() if $ENV{CCAI_SUPPRESS_WARNINGS};
@@ -451,6 +456,94 @@ sub request {
             success => 0,
             error   => $error_msg
         };
+    }
+}
+
+=head2 brand
+
+Returns the Brand service instance.
+
+=cut
+
+sub brand {
+    my $self = shift;
+    return $self->{brand};
+}
+
+=head2 campaign
+
+Returns the Campaign service instance.
+
+=cut
+
+sub campaign {
+    my $self = shift;
+    return $self->{campaign};
+}
+
+=head2 get_compliance_url
+
+Returns the compliance API URL.
+
+=cut
+
+sub get_compliance_url {
+    my $self = shift;
+    return $self->{compliance_url};
+}
+
+=head2 compliance_request($method, $endpoint, $data)
+
+Makes an authenticated API request to the Compliance API.
+Handles 204 No Content responses (e.g. DELETE) gracefully.
+
+=cut
+
+sub compliance_request {
+    my ($self, $method, $endpoint, $data) = @_;
+
+    my $url = $self->{compliance_url} . $endpoint;
+    my $request;
+
+    if (uc($method) eq 'GET') {
+        $request = GET($url);
+    } elsif (uc($method) eq 'POST') {
+        $request = POST($url);
+        $request->content($self->{json}->encode($data)) if $data;
+    } elsif (uc($method) eq 'PUT') {
+        $request = PUT($url);
+        $request->content($self->{json}->encode($data)) if $data;
+    } elsif (uc($method) eq 'PATCH') {
+        $request = HTTP::Request->new('PATCH', $url);
+        $request->content($self->{json}->encode($data)) if $data;
+    } elsif (uc($method) eq 'DELETE') {
+        $request = DELETE($url);
+    } else {
+        return { success => 0, error => "Unsupported HTTP method: $method" };
+    }
+
+    $request->header('Authorization' => "Bearer " . $self->{api_key});
+    $request->header('Content-Type'  => 'application/json');
+    $request->header('Accept'        => '*/*');
+
+    my $response = $self->{ua}->request($request);
+
+    if ($response->is_success) {
+        # 204 No Content — DELETE endpoints return empty body
+        if ($response->code == 204 || !$response->content) {
+            return { success => 1, data => {} };
+        }
+
+        my $response_data;
+        eval { $response_data = $self->{json}->decode($response->content) };
+        if ($@) {
+            return { success => 0, error => "Failed to parse JSON response: $@" };
+        }
+        return { success => 1, data => $response_data };
+    } else {
+        my $error_msg = "API Error: " . $response->status_line;
+        $error_msg .= " - " . $response->content if $response->content;
+        return { success => 0, error => $error_msg };
     }
 }
 
