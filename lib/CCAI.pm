@@ -37,6 +37,8 @@ use CCAI::Webhook;
 use CCAI::Contact;
 use CCAI::Brand;
 use CCAI::Campaign;
+use CCAI::Brand;
+use CCAI::Campaign;
 use CCAI::ContactValidator;
 
 our $VERSION = '1.6.0';
@@ -190,9 +192,9 @@ sub new {
     $self->{email}              = CCAI::Email->new($self);
     $self->{webhook}            = CCAI::Webhook->new($self);
     $self->{contact}            = CCAI::Contact->new($self);
-    $self->{brand}    = CCAI::Brand->new($self);
-    $self->{campaign} = CCAI::Campaign->new($self);
-    $self->{contact_validator} = CCAI::ContactValidator->new($self);
+    $self->{brand}              = CCAI::Brand->new($self);
+    $self->{campaign}           = CCAI::Campaign->new($self);
+    $self->{contact_validator}  = CCAI::ContactValidator->new($self);
     
     # Auto-suppress warnings if environment variable is set
     $self->suppress_lwp_warnings() if $ENV{CCAI_SUPPRESS_WARNINGS};
