@@ -1,0 +1,138 @@
+name: Release Perl SDK
+
+on:
+  push:
+    tags:
+      - "release/v*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: perl-release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Build and publish to CPAN
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Perl
+        uses: shogo82148/actions-setup-perl@v1
+        with:
+          perl-version: "5.38"
+
+      - name: Validate build system
+        run: |
+          set -euo pipefail
+
+          has_makefile=$([[ -f Makefile.PL ]] && echo 1 || echo 0)
+          has_build=$([[ -f Build.PL ]] && echo 1 || echo 0)
+          total=$((has_makefile + has_build))
+
+          if [[ $total -eq 0 ]]; then
+            echo "Error: No build system found (Makefile.PL or Build.PL required)"
+            exit 1
+          elif [[ $total -gt 1 ]]; then
+            echo "Error: Multiple build systems found (only one allowed)"
+            exit 1
+          fi
+
+          if [[ $has_makefile -eq 1 ]]; then
+            echo "Build system: ExtUtils::MakeMaker"
+          else
+            echo "Build system: Module::Build"
+          fi
+
+      - name: Install tools and dependencies
+        run: |
+          set -euo pipefail
+
+          cpanm --notest CPAN::Uploader Module::Build
+          cpanm --notest --installdeps .
+
+      - name: Configure distribution
+        run: |
+          set -euo pipefail
+
+          if [ -f Makefile.PL ]; then
+            echo "Configuring with ExtUtils::MakeMaker..."
+            perl Makefile.PL
+          elif [ -f Build.PL ]; then
+            echo "Configuring with Module::Build..."
+            perl Build.PL
+          fi
+
+      - name: Build distribution
+        run: |
+          set -euo pipefail
+
+          if [ -f Makefile ]; then
+            make
+          elif [ -f Build ]; then
+            ./Build
+          fi
+
+      - name: Create release archive
+        run: |
+          set -euo pipefail
+
+          rm -f *.tar.gz
+
+          if [ -f Makefile ]; then
+            make dist
+          elif [ -f Build ]; then
+            ./Build dist
+          fi
+
+      - name: Validate distribution archive
+        run: |
+          set -euo pipefail
+
+          DIST_FILE=$(find . -maxdepth 1 -name "*.tar.gz" -type f -printf '%T@ %p\n' | sort -rn | head -1 | cut -d' ' -f2-)
+
+          if [ -z "$DIST_FILE" ]; then
+            echo "Error: No distribution tarball found (*.tar.gz)"
+            find . -maxdepth 1 -type f | head -20
+            exit 1
+          fi
+
+          echo "Distribution archive created: $DIST_FILE"
+          ls -lh "$DIST_FILE"
+
+      - name: Validate secrets
+        env:
+          PAUSE_USERNAME: ${{ secrets.PAUSE_USERNAME }}
+          PAUSE_PASSWORD: ${{ secrets.PAUSE_PASSWORD }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${PAUSE_USERNAME:-}" ] || [ -z "${PAUSE_PASSWORD:-}" ]; then
+            echo "Error: PAUSE_USERNAME and PAUSE_PASSWORD secrets must be configured"
+            exit 1
+          fi
+
+      - name: Upload to CPAN
+        env:
+          PAUSE_USERNAME: ${{ secrets.PAUSE_USERNAME }}
+          PAUSE_PASSWORD: ${{ secrets.PAUSE_PASSWORD }}
+        run: |
+          set -euo pipefail
+
+          DIST_FILE=$(find . -maxdepth 1 -name "*.tar.gz" -type f -printf '%T@ %p\n' | sort -rn | head -1 | cut -d' ' -f2-)
+
+          if [ -z "$DIST_FILE" ]; then
+            echo "Error: No distribution tarball found (*.tar.gz)"
+            exit 1
+          fi
+
+          echo "Uploading distribution: $DIST_FILE"
+          cpan-upload --user "$PAUSE_USERNAME" --password "$PAUSE_PASSWORD" "$DIST_FILE"
+
+          echo "Successfully uploaded to CPAN"
