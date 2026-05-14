@@ -37,8 +37,9 @@ use CCAI::Webhook;
 use CCAI::Contact;
 use CCAI::Brand;
 use CCAI::Campaign;
+use CCAI::ContactValidator;
 
-our $VERSION = '1.5.0';
+our $VERSION = '1.6.0';
 
 =head1 NAME
 
@@ -184,13 +185,14 @@ sub new {
     bless $self, $class;
     
     # Initialize services
-    $self->{sms}      = CCAI::SMS->new($self);
-    $self->{mms}      = CCAI::MMS->new($self);
-    $self->{email}    = CCAI::Email->new($self);
-    $self->{webhook}  = CCAI::Webhook->new($self);
-    $self->{contact}  = CCAI::Contact->new($self);
+    $self->{sms}                = CCAI::SMS->new($self);
+    $self->{mms}                = CCAI::MMS->new($self);
+    $self->{email}              = CCAI::Email->new($self);
+    $self->{webhook}            = CCAI::Webhook->new($self);
+    $self->{contact}            = CCAI::Contact->new($self);
     $self->{brand}    = CCAI::Brand->new($self);
     $self->{campaign} = CCAI::Campaign->new($self);
+    $self->{contact_validator} = CCAI::ContactValidator->new($self);
     
     # Auto-suppress warnings if environment variable is set
     $self->suppress_lwp_warnings() if $ENV{CCAI_SUPPRESS_WARNINGS};
@@ -289,6 +291,17 @@ Returns the Contact service instance.
 sub contact {
     my $self = shift;
     return $self->{contact};
+}
+
+=head2 contact_validator
+
+Returns the ContactValidator service instance.
+
+=cut
+
+sub contact_validator {
+    my $self = shift;
+    return $self->{contact_validator};
 }
 
 =head2 get_client_id
