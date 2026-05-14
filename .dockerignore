@@ -1,0 +1,8 @@
+.git
+.github
+*.md
+LICENSE
+examples/
+t/
+.env
+.env.*
