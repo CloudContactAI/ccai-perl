@@ -42,10 +42,11 @@ unless ($client_id && $api_key) {
 # ---------------------------------------------------------------------------
 # Client
 # ---------------------------------------------------------------------------
+# Use CCAI_BASE_URL if set (local dev), otherwise fall back to test environment
 my $ccai = CCAI->new({
     client_id            => $client_id,
     api_key              => $api_key,
-    use_test_environment => 1,
+    use_test_environment => $ENV{CCAI_BASE_URL} ? 0 : 1,
 });
 
 # ---------------------------------------------------------------------------
@@ -542,6 +543,38 @@ run_test('42 Campaign delete', sub {
     assert_success($res);
     # Clean up campaign brand
     $ccai->brand->delete($campaign_brand_id) if $campaign_brand_id;
+});
+
+# ---------------------------------------------------------------------------
+# 43-46: ContactValidator
+# ---------------------------------------------------------------------------
+run_test('43 ContactValidator validate_email', sub {
+    my $res = $ccai->contact_validator->validate_email($email1);
+    assert_success($res);
+    die "status is empty" unless $res->{data}{status};
+});
+
+run_test('44 ContactValidator validate_emails', sub {
+    my $res = $ccai->contact_validator->validate_emails([$email1, $email2]);
+    assert_success($res);
+    my $total = $res->{data}{summary}{total} // 0;
+    die "expected summary.total=2, got $total" unless $total == 2;
+});
+
+run_test('45 ContactValidator validate_phone', sub {
+    my $res = $ccai->contact_validator->validate_phone($phone1);
+    assert_success($res);
+    die "status is empty" unless $res->{data}{status};
+});
+
+run_test('46 ContactValidator validate_phones', sub {
+    my $res = $ccai->contact_validator->validate_phones([
+        { phone => $phone1 },
+        { phone => $phone2 },
+    ]);
+    assert_success($res);
+    my $total = $res->{data}{summary}{total} // 0;
+    die "expected summary.total=2, got $total" unless $total == 2;
 });
 
 # ---------------------------------------------------------------------------
