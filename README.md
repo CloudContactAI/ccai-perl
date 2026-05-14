@@ -1,4 +1,4 @@
-# CCAI Perl Client v1.5.0
+# CCAI Perl Client v1.6.0
 
 A Perl client for the [CloudContactAI](https://cloudcontactai.com) API that allows you to easily send SMS and MMS messages, send email campaigns, manage webhooks, and manage contact opt-out preferences.
 
@@ -278,6 +278,48 @@ $ccai->contact->set_do_not_text(
     do_not_text => 1,
     contact_id  => 'contact-abc-123'
 );
+```
+
+### Contact Validator
+
+Validate email addresses and phone numbers.
+
+```perl
+my $ccai = CCAI->new({
+    client_id => 'YOUR-CLIENT-ID',
+    api_key   => 'API-KEY-TOKEN'
+});
+
+# Validate a single email
+my $email_result = $ccai->contact_validator->validate_email('user@example.com');
+if ($email_result->{success}) {
+    print "Status: " . $email_result->{data}{status} . "\n"; # "valid" | "invalid" | "risky"
+}
+
+# Validate multiple emails (up to 50)
+my $bulk_emails = $ccai->contact_validator->validate_emails([
+    'user@example.com',
+    'bad@invalid.xyz'
+]);
+if ($bulk_emails->{success}) {
+    print "Total: " . $bulk_emails->{data}{summary}{total} . "\n"; # 2
+    print "Valid: " . $bulk_emails->{data}{summary}{valid} . "\n"; # 1
+}
+
+# Validate a single phone number
+my $phone_result = $ccai->contact_validator->validate_phone('+15551234567', { country_code => 'US' });
+if ($phone_result->{success}) {
+    print "Status: " . $phone_result->{data}{status} . "\n"; # "valid" | "invalid" | "landline"
+}
+
+# Validate multiple phone numbers (up to 50)
+my $bulk_phones = $ccai->contact_validator->validate_phones([
+    { phone => '+15551234567' },
+    { phone => '+15559876543', countryCode => 'US' }
+]);
+if ($bulk_phones->{success}) {
+    print "Landline: " . $bulk_phones->{data}{summary}{landline} . "\n"; # 1
+}
 ```
 
 ### Webhooks
