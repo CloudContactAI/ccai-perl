@@ -1,6 +1,6 @@
 # CCAI Perl Client v1.6.0
 
-A Perl client for the [CloudContactAI](https://cloudcontactai.com) API that allows you to easily send SMS and MMS messages, send email campaigns, manage webhooks, and manage contact opt-out preferences.
+A Perl client for the [CloudContactAI](https://cloudcontactai.com) API that allows you to easily send SMS and MMS messages, send email campaigns, manage webhooks, manage contact opt-out preferences, register brands for TCR verification, and register campaigns for TCR carrier vetting.
 
 ## What's New in v1.5.0
 
@@ -321,6 +321,118 @@ if ($bulk_phones->{success}) {
     print "Landline: " . $bulk_phones->{data}{summary}{landline} . "\n"; # 1
 }
 ```
+
+### Brand Registration
+
+Register and manage brands for TCR verification.
+
+```perl
+my $ccai = CCAI->new({
+    client_id => 'YOUR-CLIENT-ID',
+    api_key   => 'API-KEY-TOKEN'
+});
+
+# Create a brand
+my $brand = $ccai->brands->create({
+    legalCompanyName => 'Collect.org Inc.',
+    dba              => 'Collect',
+    entityType       => 'NON_PROFIT',
+    taxId            => '123456789',
+    taxIdCountry     => 'US',
+    country          => 'US',
+    verticalType     => 'NON_PROFIT',
+    websiteUrl       => 'https://www.collect.org',
+    street           => '123 Main Street',
+    city             => 'San Francisco',
+    state            => 'CA',
+    postalCode       => '94105',
+    contactFirstName => 'Jane',
+    contactLastName  => 'Doe',
+    contactEmail     => 'jane@collect.org',
+    contactPhone     => '+14155551234',
+});
+print "Brand created with ID: " . $brand->{data}{id} . "\n" if $brand->{success};
+
+# Get a brand by ID
+my $fetched = $ccai->brands->get($brand->{data}{id});
+print "Website match score: " . ($fetched->{data}{websiteMatchScore} // 'pending') . "\n";
+
+# List all brands
+my $brand_list = $ccai->brands->list();
+print "Found " . scalar(@{$brand_list->{data}}) . " brand(s)\n" if $brand_list->{success};
+
+# Update a brand (partial update)
+$ccai->brands->update($brand->{data}{id}, {
+    street => '456 Oak Avenue',
+    city   => 'Los Angeles',
+});
+
+# Delete a brand
+$ccai->brands->delete($brand->{data}{id});
+```
+
+**Entity Types:** `PRIVATE_PROFIT`, `PUBLIC_PROFIT`, `NON_PROFIT`, `GOVERNMENT`, `SOLE_PROPRIETOR`
+
+> Note: `PUBLIC_PROFIT` entities require `stockSymbol` and `stockExchange` fields.
+
+**Vertical Types:** `AUTOMOTIVE`, `AGRICULTURE`, `BANKING`, `COMMUNICATION`, `CONSTRUCTION`, `EDUCATION`, `ENERGY`, `ENTERTAINMENT`, `GOVERNMENT`, `HEALTHCARE`, `HOSPITALITY`, `INSURANCE`, `LEGAL`, `MANUFACTURING`, `NON_PROFIT`, `PROFESSIONAL`, `REAL_ESTATE`, `RETAIL`, `TECHNOLOGY`, `TRANSPORTATION`
+
+### Campaign Registration
+
+Register and manage campaigns for TCR carrier vetting.
+
+```perl
+my $ccai = CCAI->new({
+    client_id => 'YOUR-CLIENT-ID',
+    api_key   => 'API-KEY-TOKEN'
+});
+
+# Create a campaign
+my $campaign = $ccai->campaigns->create({
+    brandId          => 1,
+    useCase          => 'MIXED',
+    subUseCases      => ['CUSTOMER_CARE', 'TWO_FACTOR_AUTHENTICATION', 'ACCOUNT_NOTIFICATION'],
+    description      => 'Security codes and support messaging.',
+    messageFlow      => 'Users opt-in via signup form at https://example.com/signup',
+    hasEmbeddedLinks => 1,
+    hasEmbeddedPhone => 0,
+    isAgeGated       => 0,
+    isDirectLending  => 0,
+    optInKeywords    => ['START'],
+    optInMessage     => 'Welcome! Reply STOP to cancel.',
+    optInProofUrl    => 'https://example.com/opt-in-proof.png',
+    helpKeywords     => ['HELP'],
+    helpMessage      => 'For HELP email support@example.com.',
+    optOutKeywords   => ['STOP'],
+    optOutMessage    => 'STOP received. You are unsubscribed.',
+    sampleMessages   => [
+        'Your code is 554321. Reply STOP to cancel.',
+        'Your ticket has been updated. Reply HELP for info.',
+    ],
+});
+print "Campaign created with ID: " . $campaign->{data}{id} . "\n" if $campaign->{success};
+
+# Get a campaign by ID
+my $fetched = $ccai->campaigns->get($campaign->{data}{id});
+
+# List all campaigns
+my $campaign_list = $ccai->campaigns->list();
+print "Found " . scalar(@{$campaign_list->{data}}) . " campaign(s)\n" if $campaign_list->{success};
+
+# Update a campaign (partial update)
+$ccai->campaigns->update($campaign->{data}{id}, {
+    description => 'Updated description.',
+});
+
+# Delete a campaign
+$ccai->campaigns->delete($campaign->{data}{id});
+```
+
+**Use Cases:** `TWO_FACTOR_AUTHENTICATION`, `ACCOUNT_NOTIFICATION`, `CUSTOMER_CARE`, `DELIVERY_NOTIFICATION`, `FRAUD_ALERT`, `HIGHER_EDUCATION`, `LOW_VOLUME_MIXED`, `MARKETING`, `MIXED`, `POLLING_VOTING`, `PUBLIC_SERVICE_ANNOUNCEMENT`, `SECURITY_ALERT`
+
+> Note: `MIXED` and `LOW_VOLUME_MIXED` campaigns require 2–3 `subUseCases`.
+
+**Sub-Use Cases:** `TWO_FACTOR_AUTHENTICATION`, `ACCOUNT_NOTIFICATION`, `CUSTOMER_CARE`, `DELIVERY_NOTIFICATION`, `FRAUD_ALERT`, `MARKETING`, `POLLING_VOTING`
 
 ### Webhooks
 
