@@ -329,7 +329,7 @@ sub send_campaign {
     return $response;
 }
 
-=head2 send_single($firstName, $lastName, $email, $subject, $message, $sender_email, $reply_email, $sender_name, $title, \%options, \%data, $custom_account_id)
+=head2 send_single($firstName, $lastName, $email, $subject, $message, $text_content, $sender_email, $reply_email, $sender_name, $title, \%options, \%data, $custom_account_id)
 
 Send a single email to one recipient.
 
@@ -339,6 +339,7 @@ Send a single email to one recipient.
         "john@example.com",
         "Welcome to Our Service",
         "<p>Hello \${firstName},</p><p>You are on the \${plan} plan.</p>",
+        undef,                               # text_content
         "noreply@yourcompany.com",
         "support@yourcompany.com",
         "Your Company",
@@ -354,6 +355,7 @@ Parameters:
 - email: Recipient's email address
 - subject: Email subject
 - message: HTML message content
+- text_content: Reserved positional parameter; pass undef
 - sender_email: Sender's email address
 - reply_email: Reply-to email address
 - sender_name: Sender's name

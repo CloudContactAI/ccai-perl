@@ -24,7 +24,6 @@ WriteMakefile(
         'HTTP::Request::Common' => '0',
         'File::Basename'        => '0',
         'MIME::Base64'          => '0',
-        'File::Slurp'           => '0',
         'Carp'                  => '0',
     },
     dist  => { COMPRESS => 'gzip -9f', SUFFIX => 'gz', },

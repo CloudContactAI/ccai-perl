@@ -27,10 +27,11 @@ CCAI::MMS - MMS service for the CCAI API
         "path/to/image.jpg"
     );
 
-    # Single recipient shorthand
+    # Single recipient shorthand (requires an already-uploaded file key,
+    # e.g. obtained via send_with_image, get_signed_url + upload_file)
     my $response = $mms->send_single(
         "John", "Doe", "+15551234567",
-        "Hello!", "MMS Test", "path/to/image.jpg"
+        "Hello!", "MMS Test", $file_key
     );
 
 =head1 METHODS

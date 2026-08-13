@@ -15,19 +15,18 @@ CCAI::Webhook - Webhook management for the CCAI API
 =head1 SYNOPSIS
 
     my $webhook = CCAI::Webhook->new($ccai_instance);
-    
+
     # Register a new webhook
     my $response = $webhook->register({
-        url => "https://example.com/webhook",
-        events => ["message.sent", "message.received"],
+        url    => "https://example.com/webhook",
         secret => "your-webhook-secret"
     });
-    
+
     # List all webhooks
     my $webhooks = $webhook->list();
-    
+
     # Verify a webhook signature
-    my $is_valid = $webhook->verify_signature($signature, $body, $secret);
+    my $is_valid = $webhook->verify_signature($signature, $client_id, $event_hash, $secret);
 
 =head1 DESCRIPTION
 
@@ -61,15 +60,13 @@ sub new {
 Register a new webhook endpoint.
 
     my $response = $webhook->register({
-        url => "https://example.com/webhook",
-        events => ["message.sent", "message.received"],
+        url    => "https://example.com/webhook",
         secret => "your-webhook-secret"
     });
 
 Parameters:
 - config: Hash reference with webhook configuration
   - url: URL to receive webhook events
-  - events: Array reference of event types to subscribe to
   - secret: Optional secret for webhook signature verification
 
 Returns a hash reference:
@@ -116,8 +113,7 @@ sub register {
 Update an existing webhook configuration.
 
     my $response = $webhook->update("webhook-123", {
-        url => "https://example.com/webhook-updated",
-        events => ["message.sent"],
+        url    => "https://example.com/webhook-updated",
         secret => "your-updated-secret"
     });
 
@@ -125,7 +121,6 @@ Parameters:
 - id: Webhook ID
 - config: Hash reference with updated webhook configuration
   - url: URL to receive webhook events
-  - events: Array reference of event types to subscribe to
   - secret: Optional secret for webhook signature verification
 
 Returns a hash reference:
