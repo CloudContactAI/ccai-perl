@@ -74,16 +74,16 @@ CCAI - Perl client for the Cloud Contact AI API
         "john@example.com",
         "Welcome to Our Service",
         "<p>Hello \${firstName},</p><p>Thank you for signing up!</p>",
+        undef,                              # text_content
         "noreply@yourcompany.com",
         "support@yourcompany.com",
         "Your Company",
         "Welcome Email"
     );
-    
+
     # Register a webhook
     my $webhook_response = $ccai->webhook->register({
-        url => "https://example.com/webhook",
-        events => ["message.sent", "message.received"],
+        url    => "https://example.com/webhook",
         secret => "your-webhook-secret"
     });
 

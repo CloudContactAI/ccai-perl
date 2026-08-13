@@ -51,20 +51,20 @@ sub new {
     return $self;
 }
 
-=head2 send(\@accounts, $message, $title, \%options)
+=head2 send(\@accounts, $message, $title, $sender_phone, \%options)
 
 Send an SMS message to one or more recipients.
 
     my $response = $sms->send(
         [{
             firstName => "John",
-            lastName  => "Doe", 
+            lastName  => "Doe",
             phone      => "+15551234567"
         }],
         "Hello \${firstName} \${lastName}!",
         "Test Campaign",
+        undef,  # sender_phone
         {
-            timeout     => 60000,
             on_progress => sub { print "Status: $_[0]\n" }
         }
     );
@@ -73,6 +73,7 @@ Parameters:
 - accounts: Array reference of recipient hash references
 - message: The message to send (can include ${firstName} and ${lastName} variables)
 - title: Campaign title
+- sender_phone: Optional sender phone number
 - options: Optional hash reference with settings
 
 Each account hash should contain:
@@ -83,8 +84,6 @@ Each account hash should contain:
 - messageData: Optional string forwarded as-is to your webhook handler (wire: "messageData")
 
 Options hash can contain:
-- timeout: Optional timeout in milliseconds
-- retries: Optional retry count for failed requests
 - on_progress: Optional callback for tracking progress
 
 Returns a hash reference:
@@ -188,7 +187,7 @@ sub send {
     return $response;
 }
 
-=head2 send_single($firstName, $lastName, $phone, $message, $title, \%options, \%data, $message_data)
+=head2 send_single($firstName, $lastName, $phone, $message, $title, \%options, \%data, $message_data, $sender_phone)
 
 Send a single SMS message to one recipient.
 
@@ -212,6 +211,7 @@ Parameters:
 - options: Optional hash reference with settings
 - data: Optional hash reference for variable substitution in message templates (sent as "data")
 - message_data: Optional string forwarded as-is to your webhook handler (sent as "messageData")
+- sender_phone: Optional sender phone number
 
 Returns a hash reference:
 - success: 1 for success, 0 for failure

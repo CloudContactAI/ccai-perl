@@ -62,7 +62,10 @@ sub handle_webhook {
     print "⏰ Time: " . localtime() . "\n";
 
     if ($webhook_secret && $webhook_secret ne 'your-webhook-secret') {
-        unless ($webhook->verify_signature($signature, $body, $webhook_secret)) {
+        my $payload = eval { $ccai->{json}->decode($body) };
+        my $event_hash = $payload ? $payload->{eventHash} : undef;
+
+        unless ($event_hash && $webhook->verify_signature($signature, $ccai->get_client_id(), $event_hash, $webhook_secret)) {
             print "❌ Invalid signature - rejecting request\n\n";
             my $response = HTTP::Response->new(401);
             $response->content("Unauthorized");
