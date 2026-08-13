@@ -10,7 +10,7 @@ use CCAI;
 # Create a CCAI client for test environment
 my $ccai = CCAI->new({
     client_id => 'YOUR_CLIENT_ID',
-    api_key   => 'YOUR_API_KEY'
+    api_key   => 'YOUR_API_KEY',
     base_url  => 'https://core-test-cloudcontactai.allcode.com/api',
     email_url => 'https://email-campaigns-test-cloudcontactai.allcode.com',
     auth_url  => 'https://auth-test-cloudcontactai.allcode.com'
@@ -37,6 +37,7 @@ sub send_single_email {
         "andreas\@allcode.com",                   # Email address
         "Welcome to Our Service",                  # Subject
         "<p>Hello \${firstName},</p><p>Thank you for signing up for our service!</p><p>Best regards,<br>The Team</p>",  # HTML message content
+        undef,                                      # text_content
         "noreply\@allcode.com",                   # Sender email
         "support\@allcode.com",                   # Reply-to email
         "CCAI Test",                               # Sender name
