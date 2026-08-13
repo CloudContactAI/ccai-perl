@@ -220,12 +220,13 @@ my $response = $ccai->mms->send_with_image(
     "path/to/image.jpg"
 );
 
-# Send MMS to a single recipient (shorthand)
+# Send MMS to a single recipient (shorthand — requires an already-uploaded
+# file key, e.g. obtained via send_with_image or get_signed_url + upload_file)
 my $single = $ccai->mms->send_single(
     "John", "Doe", "+15551234567",
     "Hello \${firstName}!",
     "Single MMS Test",
-    "path/to/image.png"
+    $file_key
 );
 
 # Send MMS with a specific sender phone
@@ -248,6 +249,7 @@ my $response = $ccai->email->send_single(
     "john@example.com",                        # Email address
     "Welcome to Our Service",                  # Subject
     "<p>Hello \${firstName},</p><p>Thank you for signing up!</p>",
+    undef,                                      # text_content
     "noreply@yourcompany.com",                 # Sender email
     "support@yourcompany.com",                 # Reply-to email
     "Your Company",                            # Sender name
@@ -287,23 +289,14 @@ my $ccai = CCAI->new({
 });
 
 # Opt a contact out of text messages (by phone number)
-my $result = $ccai->contact->set_do_not_text(
-    do_not_text => 1,
-    phone       => '+15551234567'
-);
+my $result = $ccai->contact->set_do_not_text(1, { phone => '+15551234567' });
 print "Opted out: $result->{phone}\n" if $result->{success};
 
 # Opt a contact back in
-$ccai->contact->set_do_not_text(
-    do_not_text => 0,
-    phone       => '+15551234567'
-);
+$ccai->contact->set_do_not_text(0, { phone => '+15551234567' });
 
 # Opt out by contact_id
-$ccai->contact->set_do_not_text(
-    do_not_text => 1,
-    contact_id  => 'contact-abc-123'
-);
+$ccai->contact->set_do_not_text(1, { contact_id => 'contact-abc-123' });
 ```
 
 ### Contact Validator
@@ -348,16 +341,105 @@ if ($bulk_phones->{success}) {
 }
 ```
 
+### Brand Registration
+
+Manage 10DLC brands for SMS campaign compliance.
+
+```perl
+my $ccai = CCAI->new({
+    client_id => 'YOUR-CLIENT-ID',
+    api_key   => 'API-KEY-TOKEN'
+});
+
+# Create a brand
+my $res = $ccai->brand->create({
+    legalCompanyName   => 'My Company LLC',
+    dba                => 'My Company',
+    entityType         => 'PRIVATE_PROFIT',
+    taxId              => '123456789',
+    taxIdCountry       => 'US',
+    country            => 'US',
+    verticalType       => 'TECHNOLOGY',
+    websiteUrl         => 'https://example.com',
+    street             => '123 Main St',
+    city               => 'Miami',
+    state              => 'FL',
+    postalCode         => '33101',
+    contactFirstName   => 'John',
+    contactLastName    => 'Doe',
+    contactEmail       => 'john@example.com',
+    contactPhone       => '+13055551234',
+});
+my $brand_id = $res->{data}{id};
+
+# Get a brand
+my $brand = $ccai->brand->get($brand_id);
+
+# List all brands
+my $brands = $ccai->brand->list();
+
+# Update a brand
+$ccai->brand->update($brand_id, { city => 'Fort Lauderdale' });
+
+# Delete a brand
+$ccai->brand->delete($brand_id);
+```
+
+### Campaign Registration
+
+Manage 10DLC campaigns for SMS compliance. A campaign must reference an existing brand.
+
+```perl
+use JSON;
+
+# Create a campaign
+my $res = $ccai->campaign->create({
+    brandId           => $brand_id,
+    useCase           => 'MARKETING',
+    description       => 'Order notifications and promotions',
+    messageFlow       => 'Users opt-in via our website form.',
+    hasEmbeddedLinks  => JSON::false,
+    hasEmbeddedPhone  => JSON::false,
+    isAgeGated        => JSON::false,
+    isDirectLending   => JSON::false,
+    optInKeywords     => ['START', 'YES'],
+    optInMessage      => 'You are now subscribed. Reply STOP to unsubscribe.',
+    optInProofUrl     => 'https://example.com/optin',
+    helpKeywords      => ['HELP', 'INFO'],
+    helpMessage       => 'For help, reply HELP or contact support@example.com.',
+    optOutKeywords    => ['STOP', 'CANCEL'],
+    optOutMessage     => 'You have been unsubscribed. Reply STOP to opt out.',
+    sampleMessages    => [
+        'Hello! Reply STOP to unsubscribe.',
+        'Your code is 123456. Reply HELP for assistance.',
+    ],
+    termsLink         => 'https://example.com/terms',
+    privacyLink       => 'https://example.com/privacy',
+});
+my $campaign_id = $res->{data}{id};
+
+# Get a campaign
+my $campaign = $ccai->campaign->get($campaign_id);
+
+# List all campaigns
+my $campaigns = $ccai->campaign->list();
+
+# Update a campaign
+$ccai->campaign->update($campaign_id, { description => 'Updated description' });
+
+# Delete a campaign
+$ccai->campaign->delete($campaign_id);
+```
+
 ### Webhooks
 
 #### Register a Webhook
 
 ```perl
 use CCAI;
-use CCAI::Webhook;  # Import webhook types/constants
 
 # Example 1: Register with auto-generated secret
-# WebhookConfig: { url => Str, secret => Str|Undef, events => ArrayRef|Undef }
+# WebhookConfig: { url => Str, secret => Str|Undef }
 # Returns: { success => Bool, data => { id => Int, url => Str, secretKey => Str } }
 my $webhook_config = {
     url => "https://example.com/webhook"
@@ -375,16 +457,10 @@ if ($webhook_response->{success}) {
     print "Auto-generated Secret: $webhook_secret\n";
 }
 
-# Example 2: Register with custom secret and event types
-# Events array should contain event type constants from CCAI::Webhook
+# Example 2: Register with a custom secret
 my $webhook_config_custom = {
     url    => "https://example.com/webhook-v2",
     secret => "my-custom-secret-key",
-    # Optional: specify event types
-    events => [
-        CCAI::Webhook::EventType::MESSAGE_SENT,
-        CCAI::Webhook::EventType::MESSAGE_RECEIVED
-    ]
 };
 
 my $webhook_custom = $ccai->webhook->register($webhook_config_custom);
@@ -509,13 +585,16 @@ if ($event && $event->{type} eq "message.sent") {
 
 ```
 lib/
-  CCAI.pm              # Main client class
-  CCAI/SMS.pm          # SMS service
-  CCAI/MMS.pm          # MMS service
-  CCAI/Email.pm        # Email service
-  CCAI/Contact.pm      # Contact service (opt-out)
-  CCAI/Webhook.pm      # Webhook service
-  CCAI/EnvLoader.pm    # Environment variable loader
+  CCAI.pm                   # Main client class
+  CCAI/SMS.pm               # SMS service
+  CCAI/MMS.pm               # MMS service
+  CCAI/Email.pm             # Email service
+  CCAI/Contact.pm           # Contact service (opt-out)
+  CCAI/ContactValidator.pm  # Email/phone validation service
+  CCAI/Webhook.pm           # Webhook service
+  CCAI/Brand.pm             # Brand registration service (10DLC)
+  CCAI/Campaign.pm          # Campaign registration service (10DLC)
+  CCAI/EnvLoader.pm         # Environment variable loader
 examples/              # Usage examples
 t/                     # Tests
 ```
