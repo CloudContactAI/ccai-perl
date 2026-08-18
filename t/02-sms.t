@@ -2,7 +2,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 12;
+use Test::More tests => 16;
 
 use lib '../lib';
 use CCAI;
@@ -46,3 +46,45 @@ is($response->{success}, 0, 'SMS send fails with missing phone');
 like($response->{error}, qr/phone number is required/i, 'Correct error for missing phone');
 
 done_testing();
+
+# Test 13: send_with_template builds payload with templateId
+my $template_response = $sms->send_with_template(
+    [{firstName => 'John', lastName => 'Doe', phone => '+1234567890'}],
+    12345,
+    'Template Campaign'
+);
+# Validation passes (templateId replaces message requirement)
+isnt($template_response->{error}, 'Message is required', 'send_with_template does not require message');
+
+# Test 14: send_with_template passes empty message
+my $captured = undef;
+{
+    no warnings 'redefine';
+    local *CCAI::request = sub {
+        my ($self, $method, $endpoint, $data) = @_;
+        $captured = $data;
+        return { success => 1, data => { id => 'msg-tpl-1', status => 'sent' } };
+    };
+    $sms->send_with_template(
+        [{firstName => 'John', lastName => 'Doe', phone => '+15551234567'}],
+        12345,
+        'Template Campaign'
+    );
+}
+is($captured->{templateId}, 12345, 'send_with_template sets templateId in payload');
+is($captured->{message}, '', 'send_with_template sends empty message');
+
+# Test 15: send_single_with_template builds correct account
+my $single_captured = undef;
+{
+    no warnings 'redefine';
+    local *CCAI::request = sub {
+        my ($self, $method, $endpoint, $data) = @_;
+        $single_captured = $data;
+        return { success => 1, data => { id => 'msg-tpl-2', status => 'sent' } };
+    };
+    $sms->send_single_with_template('Jane', 'Smith', '+15559876543', 99, 'Single Template');
+}
+is($single_captured->{templateId}, 99, 'send_single_with_template sets templateId');
+is($single_captured->{accounts}[0]{firstName}, 'Jane', 'send_single_with_template sets correct account');
+
