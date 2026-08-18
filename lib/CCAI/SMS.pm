@@ -95,7 +95,7 @@ Returns a hash reference:
 =cut
 
 sub send {
-    my ($self, $accounts, $message, $title, $sender_phone, $options) = @_;
+    my ($self, $accounts, $message, $title, $sender_phone, $options, $template_id) = @_;
     
     # Validate inputs
     unless ($accounts && ref $accounts eq 'ARRAY' && @$accounts > 0) {
@@ -167,6 +167,7 @@ sub send {
         title    => $title
     };
     $campaign_data->{senderPhone} = $sender_phone if $sender_phone;
+    $campaign_data->{templateId}  = $template_id  if defined $template_id;
     
     # Notify progress if callback provided
     if ($options && $options->{on_progress}) {
@@ -240,6 +241,29 @@ sub send_single {
     }
 
     return $self->send([$account], $message, $title, $sender_phone, $options);
+}
+
+=head2 send_with_template(\@accounts, $template_id, $title, $sender_phone, \%options)
+
+Send SMS using a pre-approved template (for template-controlled accounts).
+
+=cut
+
+sub send_with_template {
+    my ($self, $accounts, $template_id, $title, $sender_phone, $options) = @_;
+    return $self->send($accounts, '', $title, $sender_phone, $options, $template_id);
+}
+
+=head2 send_single_with_template($firstName, $lastName, $phone, $template_id, $title, $sender_phone, \%options)
+
+Send SMS to a single recipient using a pre-approved template.
+
+=cut
+
+sub send_single_with_template {
+    my ($self, $firstName, $lastName, $phone, $template_id, $title, $sender_phone, $options) = @_;
+    my $account = { firstName => $firstName, lastName => $lastName, phone => $phone };
+    return $self->send_with_template([$account], $template_id, $title, $sender_phone, $options);
 }
 
 1;

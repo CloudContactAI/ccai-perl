@@ -176,6 +176,32 @@ my @accounts_with_data = (
 $ccai->sms->send(\@accounts_with_data, "Your order is ready!", "Order Notification");
 ```
 
+### SMS — Template-Controlled Accounts
+
+If an account has been configured to enforce template-only messaging, all campaigns must reference a pre-approved template ID. Sending a free-text message to such an account will result in a `422` error.
+
+```perl
+# Send to multiple recipients using a template
+my $response = $ccai->sms->send_with_template(
+    \@accounts,
+    12345,          # template_id — the ID of the approved template
+    "My Campaign"
+);
+
+# Send to a single recipient using a template
+my $response = $ccai->sms->send_single_with_template(
+    "John", "Doe", "+15551234567",
+    12345,          # template_id
+    "My Campaign"
+);
+
+if ($response->{success}) {
+    print "SMS sent successfully!\n";
+}
+```
+
+The message body is resolved server-side from the template. Variable substitution (e.g. `${firstName}`) is applied automatically using the recipient's account data.
+
 ### MMS
 
 The MMS service automatically handles image uploading with MD5-based deduplication and auto-detects content type from the file extension (jpg, jpeg, png, gif).
