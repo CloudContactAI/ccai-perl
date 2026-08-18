@@ -41,7 +41,7 @@ use CCAI::Brand;
 use CCAI::Campaign;
 use CCAI::ContactValidator;
 
-our $VERSION = '1.6.0';
+our $VERSION = '1.7.0';
 
 =head1 NAME
 

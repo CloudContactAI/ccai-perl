@@ -1,4 +1,4 @@
-# CCAI Perl Client v1.6.0
+# CCAI Perl Client v1.7.0
 
 A Perl client for the [CloudContactAI](https://cloudcontactai.com) API that allows you to easily send SMS and MMS messages, send email campaigns, manage webhooks, manage contact opt-out preferences, register brands for TCR verification, and register campaigns for TCR carrier vetting.
 
