@@ -2,6 +2,11 @@
 
 All notable changes to the CCAI Perl client will be documented in this file.
 
+## [1.7.0] - 2026-08-17
+
+### Added
+- **Template-controlled SMS sending** (CLOUD-2885): optional `template_id` on `SMS::send`, plus new `send_with_template()` and `send_single_with_template()` methods for accounts that require a pre-approved template.
+
 ## [1.5.0] - 2026-03-24
 
 ### Added

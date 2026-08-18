@@ -1,8 +1,9 @@
 #!/usr/bin/env perl
 
-# CCAI Perl SDK Integration Tests — 52 tests
+# CCAI Perl SDK Integration Tests — 54 tests
 # Covers: SMS (1-6), MMS (7-17), Email (18-22), Webhook (23-29), Contact (30-31),
-#         Brands (32-36), Campaigns (37-42), ContactValidator (43-46), Negative cases (47-52)
+#         Brands (32-36), Campaigns (37-42), ContactValidator (43-46), Negative cases (47-52),
+#         SMS Templates (53-54)
 #
 # Test results use three states:
 #   PASS — the test ran and all assertions held
@@ -35,7 +36,7 @@ my @required_env = qw(
     CCAI_TEST_FIRST_NAME CCAI_TEST_LAST_NAME
     CCAI_TEST_FIRST_NAME_2 CCAI_TEST_LAST_NAME_2
     CCAI_TEST_FIRST_NAME_3 CCAI_TEST_LAST_NAME_3
-    WEBHOOK_URL
+    WEBHOOK_URL CCAI_TEST_TEMPLATE_ID
 );
 my @missing = grep { !defined $ENV{$_} || $ENV{$_} eq '' } @required_env;
 if (@missing) {
@@ -57,6 +58,7 @@ my $first2    = $ENV{CCAI_TEST_FIRST_NAME_2};
 my $last2     = $ENV{CCAI_TEST_LAST_NAME_2};
 my $first3    = $ENV{CCAI_TEST_FIRST_NAME_3};
 my $last3     = $ENV{CCAI_TEST_LAST_NAME_3};
+my $template_id = $ENV{CCAI_TEST_TEMPLATE_ID};
 
 # Unique per-run suffix so parallel SDK runs don't collide on the same webhook URL
 my $run_id       = 'perl-' . time();
@@ -771,6 +773,21 @@ run_test('52 PERMISSIVE: MMS send with nonexistent fileKey (API accepts)', sub {
         [{ firstName => $first1, lastName => $last1, phone => $phone1 }],
         'nonexistent fileKey accepted', 'Perl Permissive 52', $fake_key
     );
+    assert_send_response($res);
+});
+
+print "\n--- SMS Templates ---\n";
+
+run_test('53 SMS send_with_template', sub {
+    my $res = $ccai->sms->send_with_template([
+        {firstName => $first1, lastName => $last1, phone => $phone1},
+        {firstName => $first2, lastName => $last2, phone => $phone2},
+    ], $template_id, 'Perl Template Test');
+    assert_send_response($res);
+});
+
+run_test('54 SMS send_single_with_template', sub {
+    my $res = $ccai->sms->send_single_with_template($first1, $last1, $phone1, $template_id, 'Perl Single Template Test');
     assert_send_response($res);
 });
 

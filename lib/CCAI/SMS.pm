@@ -105,7 +105,7 @@ sub send {
         };
     }
     
-    unless ($message) {
+    unless ($message || defined $template_id) {
         return {
             success => 0,
             error   => 'Message is required'
