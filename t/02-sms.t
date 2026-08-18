@@ -2,7 +2,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 16;
+use Test::More;
 
 use lib '../lib';
 use CCAI;
@@ -45,8 +45,6 @@ $response = $sms->send([{firstName => 'John', lastName => 'Doe'}], 'test message
 is($response->{success}, 0, 'SMS send fails with missing phone');
 like($response->{error}, qr/phone number is required/i, 'Correct error for missing phone');
 
-done_testing();
-
 # Test 13: send_with_template builds payload with templateId
 my $template_response = $sms->send_with_template(
     [{firstName => 'John', lastName => 'Doe', phone => '+1234567890'}],
@@ -87,4 +85,6 @@ my $single_captured = undef;
 }
 is($single_captured->{templateId}, 99, 'send_single_with_template sets templateId');
 is($single_captured->{accounts}[0]{firstName}, 'Jane', 'send_single_with_template sets correct account');
+
+done_testing();
 
