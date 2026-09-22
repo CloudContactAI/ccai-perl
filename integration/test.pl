@@ -3,7 +3,7 @@
 # CCAI Perl SDK Integration Tests — 54 tests
 # Covers: SMS (1-6), MMS (7-17), Email (18-22), Webhook (23-29), Contact (30-31),
 #         Brands (32-36), Campaigns (37-42), ContactValidator (43-46), Negative cases (47-52),
-#         SMS Templates (53-54)
+#         SMS Templates (53-54, dedicated template account)
 #
 # Test results use three states:
 #   PASS — the test ran and all assertions held
@@ -36,7 +36,7 @@ my @required_env = qw(
     CCAI_TEST_FIRST_NAME CCAI_TEST_LAST_NAME
     CCAI_TEST_FIRST_NAME_2 CCAI_TEST_LAST_NAME_2
     CCAI_TEST_FIRST_NAME_3 CCAI_TEST_LAST_NAME_3
-    WEBHOOK_URL CCAI_TEST_TEMPLATE_ID
+    WEBHOOK_URL
 );
 my @missing = grep { !defined $ENV{$_} || $ENV{$_} eq '' } @required_env;
 if (@missing) {
@@ -58,7 +58,7 @@ my $first2    = $ENV{CCAI_TEST_FIRST_NAME_2};
 my $last2     = $ENV{CCAI_TEST_LAST_NAME_2};
 my $first3    = $ENV{CCAI_TEST_FIRST_NAME_3};
 my $last3     = $ENV{CCAI_TEST_LAST_NAME_3};
-my $template_id = $ENV{CCAI_TEST_TEMPLATE_ID};
+my $template_id = $ENV{CCAI_TEST_TEMPLATE_ID} || undef;
 
 # Unique per-run suffix so parallel SDK runs don't collide on the same webhook URL
 my $run_id       = 'perl-' . time();
@@ -778,8 +778,25 @@ run_test('52 PERMISSIVE: MMS send with nonexistent fileKey (API accepts)', sub {
 
 print "\n--- SMS Templates ---\n";
 
+# Templates run against a separate, dedicated account (CCAI_TEMPLATE_CLIENT_ID/
+# API_KEY): the main test account can't have template usage configured, since
+# that starts requiring a template_id on every campaign — including the plain
+# SMS/MMS/Email sends tested above.
+my $template_client_id = $ENV{CCAI_TEMPLATE_CLIENT_ID};
+my $template_api_key   = $ENV{CCAI_TEMPLATE_API_KEY};
+
+sub template_client {
+    skip_test('CCAI_TEMPLATE_CLIENT_ID/CCAI_TEMPLATE_API_KEY/CCAI_TEST_TEMPLATE_ID not set')
+        unless $template_client_id && $template_api_key && $template_id;
+    return CCAI->new({
+        client_id            => $template_client_id,
+        api_key              => $template_api_key,
+        use_test_environment => $ENV{CCAI_BASE_URL} ? 0 : 1,
+    });
+}
+
 run_test('53 SMS send_with_template', sub {
-    my $res = $ccai->sms->send_with_template([
+    my $res = template_client()->sms->send_with_template([
         {firstName => $first1, lastName => $last1, phone => $phone1},
         {firstName => $first2, lastName => $last2, phone => $phone2},
     ], $template_id, 'Perl Template Test');
@@ -787,7 +804,7 @@ run_test('53 SMS send_with_template', sub {
 });
 
 run_test('54 SMS send_single_with_template', sub {
-    my $res = $ccai->sms->send_single_with_template($first1, $last1, $phone1, $template_id, 'Perl Single Template Test');
+    my $res = template_client()->sms->send_single_with_template($first1, $last1, $phone1, $template_id, 'Perl Single Template Test');
     assert_send_response($res);
 });
 
