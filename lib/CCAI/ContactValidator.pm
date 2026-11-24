@@ -52,11 +52,49 @@ sub new {
 
 =head2 validate_email($email)
 
-Validate a single email address.
+Validate a single email address with Amazon SES. Nothing is sent to the address.
 
     my $result = $cv->validate_email('user@example.com');
 
-Returns a hash reference with success/data or success/error keys.
+Returns a hash reference with C<success> and C<data>, or C<success> (false) and C<error>. C<data> has
+C<contactField>, C<type>, C<status> and C<metadata>. Besides C<safe_to_send> and C<ai_verdict>, C<metadata> has these
+optional keys. They are missing when the account does not have Email Address Validation, or the address was not
+checked:
+
+=over 4
+
+=item C<verdict>
+
+The overall verdict: C<HIGH>, C<MEDIUM>, C<LOW> or C<UNKNOWN>.
+
+=item C<checks>
+
+A hash reference with six checks, each with its own verdict: C<hasValidSyntax>, C<hasValidDnsRecords>,
+C<mailboxExists> (good value C<HIGH>), and C<isRoleAddress>, C<isDisposable>, C<isRandomInput> (good value C<LOW>).
+
+=item C<validatedAt>
+
+When SES checked the address (ISO 8601). C<undef> when the address was rejected without a check.
+
+=item C<reused>
+
+True when the result is a saved check from the last 30 days, instead of a new one.
+
+=item C<error>
+
+Why the address was rejected or could not be checked, for example C<Invalid email format>.
+
+=back
+
+    if ($result->{success}) {
+        my $metadata = $result->{data}{metadata};
+        print "$metadata->{verdict}\n";                # HIGH
+        print "$metadata->{checks}{isDisposable}\n";    # LOW
+    }
+
+A failed call has C<< $result->{error} >> set to C<API Error: E<lt>status lineE<gt> - E<lt>bodyE<gt>>. A 403 means Email
+Address Validation is not enabled for the account. A 502 means SES rejected the check: the body has the AWS message,
+and if the account uses its own AWS keys for email, the IAM user needs the C<ses:GetEmailAddressInsights> permission.
 
 =cut
 
@@ -68,9 +106,13 @@ sub validate_email {
 
 =head2 validate_emails(\@emails)
 
-Validate multiple email addresses (up to 50).
+Validate multiple email addresses with Amazon SES (up to 10 per request).
 
     my $result = $cv->validate_emails(['a@b.com', 'x@y.com']);
+
+C<< $result->{data}{results} >> has one item per address, shaped like the C<data> of L</validate_email($email)>. An
+address that SES fails to check comes back as C<invalid>, with the reason in C<< metadata->{error} >>. A 403 fails the
+whole call, as for a single address.
 
 =cut
 
